@@ -23,6 +23,17 @@ public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
     }
 }
 
+extension MultiArray {
+    @inlinable
+    public func map<B: Generic>(_ transform: (A) -> B) -> MultiArray<B> {
+        var result = MultiArray<B>.init(unsafeUninitializedCapacity: self.count)
+        for i in 0 ..< self.count {
+            result[i] = transform(self[i])
+        }
+        return result
+    }
+}
+
 // TODO: It would be better if this is generic over the underlying storage
 // method. Then, we can specialise it for raw pointers on the heap (as we have
 // now), or as pointers into GPU memory, or some other format such as
