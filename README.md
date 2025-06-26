@@ -188,7 +188,7 @@ size of the array and grow its capacity if necessary, but that's out of scope
 for this discussion).
 
 Benchmarking the above shows a 20% reduction in memory usage and (up to) ~ 2x
-performance improvement.
+performance improvement (which is not bad for a simple memory bound operation).
 
 
 ## TODO
