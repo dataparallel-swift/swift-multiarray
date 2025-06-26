@@ -40,24 +40,24 @@ extension MultiArray {
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
 @usableFromInline final class MultiArrayData<A: ArrayData> {
-    @usableFromInline let payload : A.ArrayDataR
+    @usableFromInline let storage : A.ArrayDataR
 
     public init(unsafeUninitializedCapacity count: Int) {
-        self.payload = A.allocate(capacity: count)
+        self.storage = A.allocate(capacity: count)
     }
 
     @inlinable
     public subscript(index: Int) -> A {
         get {
-            A.readArrayData(self.payload, index: index)
+            A.readArrayData(self.storage, index: index)
         }
         set(value) {
-            A.writeArrayData(self.payload, index: index, value: value)
+            A.writeArrayData(self.storage, index: index, value: value)
         }
     }
 
     deinit {
-        A.deallocate(self.payload)
+        A.deallocate(self.storage)
     }
 }
 
