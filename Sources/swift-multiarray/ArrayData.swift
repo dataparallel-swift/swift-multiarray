@@ -1,5 +1,6 @@
 // Storage of datatype-generic values with an underlying struct-of-arrays
-// representation
+// representation. This is intended to be _closed_, as it only operates over the
+// fixed set of Generic representation types.
 
 public protocol ArrayData {
     associatedtype ArrayDataR
