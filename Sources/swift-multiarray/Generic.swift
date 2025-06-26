@@ -84,8 +84,8 @@ extension U: Generic {
 
 // Products: encode multiple arguments to constructors
 public struct P<A, B> {
-    @usableFromInline let _0: A
-    @usableFromInline let _1: B
+    public let _0: A
+    public let _1: B
     @inlinable @inline(__always) init(_ _0: A, _ _1: B) {
         self._0 = _0
         self._1 = _1

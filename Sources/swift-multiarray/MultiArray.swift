@@ -5,14 +5,15 @@
 //
 public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
     public let count: Int
-    private let arrayData : MultiArrayData<A.Rep>
+    @usableFromInline let arrayData : MultiArrayData<A.Rep>
 
     public init(unsafeUninitializedCapacity count: Int) {
         self.count = count
         self.arrayData = .init(unsafeUninitializedCapacity: count)
     }
 
-    subscript(index: Int) -> A {
+    @inlinable
+    public subscript(index: Int) -> A {
         get {
             A.to(self.arrayData[index])
         }
@@ -27,14 +28,15 @@ public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
 // now), or as pointers into GPU memory, or some other format such as
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
-private final class MultiArrayData<A: ArrayData> {
-    let payload : A.ArrayDataR
+@usableFromInline final class MultiArrayData<A: ArrayData> {
+    @usableFromInline let payload : A.ArrayDataR
 
     public init(unsafeUninitializedCapacity count: Int) {
         self.payload = A.allocate(capacity: count)
     }
 
-    subscript(index: Int) -> A {
+    @inlinable
+    public subscript(index: Int) -> A {
         get {
             A.readArrayData(self.payload, index: index)
         }
