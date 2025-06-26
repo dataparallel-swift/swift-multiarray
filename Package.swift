@@ -47,7 +47,7 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags([
                     "-O",
-                    "-emit-ir"
+                    // "-emit-ir"
                 ])
             ]
         ),
