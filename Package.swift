@@ -12,6 +12,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "601.0.1-latest"),
+        .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.4.0")),
+        .package(url: "git@gitlab.com:PassiveLogic/Randy.git", from: "0.4.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -33,6 +35,38 @@ let package = Package(
                 "MultiArrayMacros"
             ],
             path: "Sources/swift-multiarray"
+        ),
+
+        // Benchmarks
+        .target(
+            name: "BenchmarkFunctions",
+            dependencies: [
+                "MultiArray"
+            ],
+            path: "Benchmarks/benchmark-functions",
+            swiftSettings: [
+                .unsafeFlags([
+                    "-O",
+                    "-emit-ir"
+                ])
+            ]
+        ),
+        .executableTarget(
+            name: "bench-readme",
+            dependencies: [
+                "Randy",
+                "BenchmarkFunctions",
+                .product(name: "Benchmark", package: "package-benchmark")
+            ],
+            path: "Benchmarks/readme",
+            swiftSettings: [
+                .unsafeFlags([
+                    // "-Rpass-missed=specialize"
+                ])
+            ],
+            plugins: [
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),
+            ]
         ),
 
         // A test target used to develop the macro implementation.
