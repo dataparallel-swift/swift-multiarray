@@ -73,8 +73,10 @@ let benchmarks : @Sendable () -> Void = {
     // otherwise the benchmark framework will generate all data before any
     // benchmarking starts (which consumes a lot of memory...)
     for (size, scaling) in configs {
-        Benchmark.init("array/\(size)",      configuration: config(scaling), closure: bench(readme_array),      setup: { setup(size).0 })
-        Benchmark.init("multiarray/\(size)", configuration: config(scaling), closure: bench(readme_multiarray), setup: { setup(size).1 })
+        Benchmark.init("array/move/\(size)",       configuration: config(scaling), closure: bench(readme1_array),      setup: { setup(size).0 })
+        Benchmark.init("array/unzip/\(size)",      configuration: config(scaling), closure: bench(readme2_array),      setup: { setup(size).0 })
+        Benchmark.init("multiarray/move/\(size)",  configuration: config(scaling), closure: bench(readme1_multiarray), setup: { setup(size).1 })
+        Benchmark.init("multiarray/unzip/\(size)", configuration: config(scaling), closure: bench(readme2_multiarray), setup: { setup(size).1 })
     }
 }
 

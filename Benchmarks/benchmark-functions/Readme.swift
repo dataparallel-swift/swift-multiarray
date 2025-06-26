@@ -45,13 +45,23 @@ extension Zone {
     }
 }
 
-public func readme_array(zones: Array<Zone>) -> Array<Zone>
+public func readme1_array(zones: Array<Zone>) -> Array<Zone>
 {
     zones.map{ $0.move(dx: 1) }
 }
 
-public func readme_multiarray(zones: MultiArray<Zone>) -> MultiArray<Zone>
+public func readme1_multiarray(zones: MultiArray<Zone>) -> MultiArray<Zone>
 {
     zones.map{ $0.move(dx: 1) }
+}
+
+public func readme2_array(zones: Array<Zone>) -> Array<Float>
+{
+    zones.map{ $0.position.x }
+}
+
+public func readme2_multiarray(zones: MultiArray<Zone>) -> MultiArray<Float>
+{
+    zones.map{ $0.position.x }
 }
 
