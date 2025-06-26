@@ -116,6 +116,6 @@ extension P: ArrayData where A: ArrayData, B: ArrayData {
 // TODO: Sum
 //
 // Punting this until we have a decent sum-of-product style generic
-// representation (which we man then want to invert into a product-of-sum style
+// representation (which we may then want to invert into a product-of-sum style
 // to reuse the underlying storage for the individual fields).
 

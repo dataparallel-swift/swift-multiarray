@@ -188,7 +188,7 @@ size of the array and grow its capacity if necessary, but that's out of scope
 for this discussion).
 
 Benchmarking the above yields a 20% reduction in memory usage and 1.4x to 1.8x
-performance improvement (which not bad given this benchmark is purely memory
+performance improvement (which is not bad given this benchmark is purely memory
 bound).
 
 <details>
