@@ -55,6 +55,12 @@ extension SIMD16: Generic {}
 extension SIMD32: Generic {}
 extension SIMD64: Generic {}
 
+extension Bool: Generic {
+    public typealias Rep = UInt8
+    @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep { x ? 1 : 0 }
+    @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self { x != 0 }
+}
+
 public extension FixedWidthInteger {
     typealias Rep = Self
     @inlinable @inline(__always) static func from(_ x: Self) -> Self.Rep { x }
