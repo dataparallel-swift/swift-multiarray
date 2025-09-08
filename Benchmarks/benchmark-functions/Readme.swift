@@ -7,16 +7,16 @@ public struct Vec3<Element> {
         self.y = y
         self.z = z
     }
-
 }
 
 extension Vec3: Generic where Element: Generic {
-    public typealias Rep = P<Element.Rep, P<Element.Rep, Element.Rep>>
+    public typealias Rep = T3<Element,Element,Element>.Rep
     @inlinable @inline(__always) public static func from(_ self: Self) -> Self.Rep {
-        Element.from(self.x) .*. Element.from(self.y) .*. Element.from(self.z)
+        T3.from(T3(self.x, self.y, self.z))
     }
     @inlinable @inline(__always) public static func to(_ rep: Self.Rep) -> Self {
-        Vec3(x: Element.to(rep._0), y: Element.to(rep._1._0), z: Element.to(rep._1._1))
+        let T3 = T3<Element,Element,Element>.to(rep)
+        return Vec3(x: T3._0, y: T3._1, z: T3._2)
     }
 }
 
@@ -30,12 +30,13 @@ public struct Zone {
 }
 
 extension Zone: Generic {
-    public typealias Rep = P<Int.Rep, Vec3<Float>.Rep>
+    public typealias Rep = T2<Int, Vec3<Float>>.Rep
     @inlinable @inline(__always) public static func from(_ self: Self) -> Self.Rep {
-        Int.from(self.id) .*. Vec3.from(self.position)
+        T2.from(T2(self.id, self.position))
     }
     @inlinable @inline(__always) public static func to(_ rep: Self.Rep) -> Self {
-        Zone(id: Int.to(rep._0), position: Vec3.to(rep._1))
+        let T2 = T2<Int, Vec3<Float>>.to(rep)
+        return Zone(id: T2._0, position: T2._1)
     }
 }
 

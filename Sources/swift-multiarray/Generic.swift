@@ -88,7 +88,7 @@ extension U: Generic {
 public struct P<A, B> {
     public let _0: A
     public let _1: B
-    @inlinable @inline(__always) init(_ _0: A, _ _1: B) {
+    @inlinable @inline(__always) public init(_ _0: A, _ _1: B) {
         self._0 = _0
         self._1 = _1
     }
@@ -97,21 +97,11 @@ public struct P<A, B> {
 extension P: Generic where A: Generic, B: Generic {
     public typealias Rep = P<A.Rep, B.Rep>
     @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep {
-        A.from(x._0) .*. B.from(x._1)
+        Self.Rep( A.from(x._0), B.from(x._1) )
     }
     @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self {
-        A.to(x._0) .*. B.to(x._1)
+        Self( A.to(x._0), B.to(x._1) )
     }
-}
-
-infix operator .*. : GenericProductPrecedence
-precedencegroup GenericProductPrecedence {
-    associativity: right
-}
-
-@inlinable @inline(__always)
-public func .*. <A, B>(lhs: A, rhs: B) -> P<A,B> {
-    P(lhs, rhs)
 }
 
 // Sums: encode choice between constructors

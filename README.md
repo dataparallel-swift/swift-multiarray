@@ -27,7 +27,7 @@ which generates something like:
 extension Vec3: Generic where Element: Generic {
     typealias Rep = P<Element.Rep, P<Element.Rep, Element.Rep>>
     static func from(_ self: Self) -> Self.Rep {
-        Element.from(self.x) .*. Element.from(self.y) .*. Element.from(self.z)
+        P(Element.from(self.x), P(Element.from(self.y), Element.from(self.z)))
     }
     static func to(_ rep: Self.Rep) -> Self {
         Vec3(x: Element.to(rep._0), y: Element.to(rep._1._0), z: Element.to(rep._1._1))
@@ -37,6 +37,9 @@ extension Vec3: Generic where Element: Generic {
 
 Here `P` is a simple pair type, because Swift does not allow us to extend
 regular tuples `(,)`. Boo.
+
+For convenience we provide synonyms for tuples from 2 to 16 elements (`T2`,
+`T3`...), so that you  do not have to do the binary nesting yourself.
 
 As you can see, this is a straightforward translation over the structure of the
 datatype into an isomorphic representation using (nested) pairs. As far as the
@@ -57,7 +60,7 @@ struct Zone {
 extension Zone: Generic {
     typealias Rep = P<Int.Rep, Vec3<Float>.Rep>
     static func from(_ self: Self) -> Self.Rep {
-        Int.from(self.id) .*. Vec3.from(self.position)
+        P(Int.from(self.id), Vec3.from(self.position))
     }
     static func to(_ rep: Self.Rep) -> Self {
         Zone(id: Int.to(rep._0), position: Vec3.to(rep._1))
