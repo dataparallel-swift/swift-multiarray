@@ -90,6 +90,21 @@ extension U: Generic {
     @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self { x }
 }
 
+// Constant: Encode boxed/constant data (i.e. don't do anything with it; will
+// not be encoded into a struct-of-array representation)
+public struct K<A> {
+    public let unK: A
+    @inlinable @inline(__always) public init(_ x: A) {
+        self.unK = x
+    }
+}
+
+extension K: Generic {
+    public typealias Rep = Self
+    @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep { x }
+    @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self { x }
+}
+
 // Products: encode multiple arguments to constructors
 public struct P<A, B> {
     public let _0: A

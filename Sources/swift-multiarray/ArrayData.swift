@@ -94,6 +94,26 @@ extension U: ArrayData {
     @inlinable public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) { }
 }
 
+// Constant
+extension K: ArrayData {
+    // Is this safe for reference types? Otherwise we should use a regular array
+    // as the backing storage. For reference types maybe we need to combine this
+    // with Unmanaged?
+    public typealias ArrayDataR = UnsafeMutableBufferPointer<A>
+    @inlinable public static func allocate(capacity: Int, context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
+        .allocate(capacity: capacity)
+    }
+    @inlinable public static func deallocate(_ arrayData: Self.ArrayDataR, capacity: Int, context: inout UnsafeMutableRawPointer) {
+        arrayData.deallocate()
+    }
+    @inlinable public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
+        K(arrayData[index])
+    }
+    @inlinable public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
+        arrayData.initializeElement(at: index, to: value.unK)
+    }
+}
+
 // Product
 extension P: ArrayData where A: ArrayData, B: ArrayData {
     public typealias ArrayDataR = (A.ArrayDataR, B.ArrayDataR)
