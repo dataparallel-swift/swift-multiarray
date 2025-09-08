@@ -36,6 +36,29 @@ extension MultiArray {
     }
 }
 
+extension MultiArray {
+    @inlinable
+    public func toArray() -> Array<A> {
+        .init(unsafeUninitializedCapacity: self.count, initializingWith: { buffer, initializedCount in
+            for i in 0 ..< self.count {
+                buffer.initializeElement(at: i, to: self[i])
+            }
+            initializedCount = self.count
+        })
+    }
+}
+
+extension Array where Element: Generic, Element.Rep: ArrayData {
+    @inlinable
+    public func toMultiArray() -> MultiArray<Element> {
+        var marr = MultiArray<Element>.init(unsafeUninitializedCapacity: self.count)
+        for i in 0 ..< self.count {
+            marr[i] = self[i]
+        }
+        return marr
+    }
+}
+
 // TODO: It would be better if this is generic over the underlying storage
 // method. Then, we can specialise it for raw pointers on the heap (as we have
 // now), or as pointers into GPU memory, or some other format such as
