@@ -6,7 +6,7 @@ import CompilerPluginSupport
 
 let package = Package(
     name: "swift-multiarray",
-    platforms: [.macOS(.v10_15)],
+    platforms: [.macOS(.v15)],
     products: [
         .library( name: "MultiArray", targets: ["MultiArray"])
     ],

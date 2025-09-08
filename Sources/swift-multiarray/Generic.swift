@@ -41,7 +41,9 @@ extension UInt16: Generic {}
 extension UInt32: Generic {}
 extension UInt64: Generic {}
 extension UInt128: Generic {}
+#if arch(arm64)
 extension Float16: Generic {}
+#endif
 extension Float32: Generic {}
 extension Float64: Generic {}
 

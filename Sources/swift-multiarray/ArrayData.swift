@@ -23,7 +23,9 @@ extension UInt16: ArrayData {}
 extension UInt32: ArrayData {}
 extension UInt64: ArrayData {}
 extension UInt128: ArrayData {}
+#if arch(arm64)
 extension Float16: ArrayData {}
+#endif
 extension Float32: ArrayData {}
 extension Float64: ArrayData {}
 
