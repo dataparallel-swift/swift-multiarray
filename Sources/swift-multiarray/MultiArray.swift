@@ -4,11 +4,13 @@
 // vectorisation.
 //
 public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
-    public let count: Int
     @usableFromInline let arrayData : MultiArrayData<A.Rep>
 
+    public var count: Int {
+        get { arrayData.capacity }
+    }
+
     public init(unsafeUninitializedCapacity count: Int) {
-        self.count = count
         self.arrayData = .init(unsafeUninitializedCapacity: count)
     }
 
@@ -40,10 +42,14 @@ extension MultiArray {
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
 @usableFromInline final class MultiArrayData<A: ArrayData> {
-    @usableFromInline let storage : A.ArrayDataR
+    @usableFromInline let capacity: Int
+    @usableFromInline var storage: A.ArrayDataR
+    @usableFromInline var context: UnsafeMutableRawPointer
 
     public init(unsafeUninitializedCapacity count: Int) {
-        self.storage = A.allocate(capacity: count)
+        self.capacity = count
+        self.context = unsafeBitCast(0, to: UnsafeMutableRawPointer.self)   // TODO
+        self.storage = A.allocate(capacity: count, context: &self.context)
     }
 
     @inlinable
@@ -52,12 +58,12 @@ extension MultiArray {
             A.readArrayData(self.storage, index: index)
         }
         set(value) {
-            A.writeArrayData(self.storage, index: index, value: value)
+            A.writeArrayData(&self.storage, index: index, value: value)
         }
     }
 
     deinit {
-        A.deallocate(self.storage)
+        A.deallocate(self.storage, capacity: self.capacity, context: &self.context)
     }
 }
 
