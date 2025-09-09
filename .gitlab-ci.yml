@@ -20,7 +20,10 @@ include:
       job-stage: lint
 
   # test stage
-  - component: gitlab.com/PassiveLogic/ci/swift-test@4
+  - component: gitlab.com/PassiveLogic/ci/swift-build@4
+    inputs:
+      job-stage: test
+  # - component: gitlab.com/PassiveLogic/ci/swift-test@4
   - component: gitlab.com/PassiveLogic/ci/swift-benchmarks@4
   - component: gitlab.com/PassiveLogic/ci/swift-api-check@4
 
