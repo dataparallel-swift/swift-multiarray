@@ -70,9 +70,10 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
     @usableFromInline var context: UnsafeMutableRawPointer
 
     public init(unsafeUninitializedCapacity count: Int) {
+        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawsize(capacity: count, from: 0), alignment: 16)
         self.capacity = count
-        self.context = unsafeBitCast(0, to: UnsafeMutableRawPointer.self)   // TODO
-        self.storage = A.allocate(capacity: count, context: &self.context)
+        self.context  = context
+        self.storage  = A.reserve(capacity: count, from: &context)
     }
 
     @inlinable
@@ -86,7 +87,7 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
     }
 
     deinit {
-        A.deallocate(self.storage, capacity: self.capacity, context: &self.context)
+        self.context.deallocate()
     }
 }
 
