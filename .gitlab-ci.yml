@@ -1,0 +1,34 @@
+stages:
+  - lint
+  - test
+  - deploy
+
+include:
+  # lint stage
+  # - component: gitlab.com/PassiveLogic/ci/danger-ts@4
+  - component: gitlab.com/PassiveLogic/ci/commitlint@4
+    inputs:
+      job-stage: lint
+  # - component: gitlab.com/PassiveLogic/ci/swiftlint@4
+  #   inputs:
+  #     job-stage: lint
+  # - component: gitlab.com/PassiveLogic/ci/swiftformat@4
+  #   inputs:
+  #     job-stage: lint
+  - component: gitlab.com/PassiveLogic/ci/swift-import-analyzer@4
+    inputs:
+      job-stage: lint
+
+  # test stage
+  - component: gitlab.com/PassiveLogic/ci/swift-test@4
+  - component: gitlab.com/PassiveLogic/ci/swift-benchmarks@4
+  - component: gitlab.com/PassiveLogic/ci/swift-api-check@4
+
+  # deploy stage
+  # - component: gitlab.com/PassiveLogic/ci/swift-docs@4
+  # - component: gitlab.com/PassiveLogic/ci/swift-dependabot@4
+  #   inputs:
+  #     token: ${SWIFT_DEPENDABOT_TOKEN}
+  #     token-email: ${SWIFT_DEPENDABOT_EMAIL}
+  #     assignee-username: trevor@passivelogic.com
+
