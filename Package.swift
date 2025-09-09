@@ -8,7 +8,7 @@ let package = Package(
     name: "swift-multiarray",
     platforms: [.macOS(.v15)],
     products: [
-        .library( name: "MultiArray", targets: ["MultiArray"])
+        .library(name: "MultiArray", targets: ["MultiArray"])
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "601.0.1-latest"),

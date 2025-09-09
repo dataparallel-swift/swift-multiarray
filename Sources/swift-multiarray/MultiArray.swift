@@ -66,7 +66,7 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
 //
 @usableFromInline final class MultiArrayData<A: ArrayData> {
     @usableFromInline let capacity: Int
-    @usableFromInline var storage: A.ArrayDataR
+    @usableFromInline var storage: A.ArrayDataR // storing the internal pointers for speed(?), but we could also recompute them from the base context
     @usableFromInline var context: UnsafeMutableRawPointer
 
     public init(unsafeUninitializedCapacity count: Int) {
