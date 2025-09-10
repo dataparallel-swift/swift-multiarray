@@ -77,6 +77,7 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
     }
 
     @inlinable
+    @_alwaysEmitIntoClient
     public subscript(index: Int) -> A {
         get {
             A.readArrayData(self.storage, index: index)

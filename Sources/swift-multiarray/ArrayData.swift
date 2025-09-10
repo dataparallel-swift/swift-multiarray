@@ -152,8 +152,9 @@ extension P: ArrayData where A: ArrayData, B: ArrayData {
 //
 // We could also reduce the duplication here if we could treat addresses as Ints
 // and not magically unsafe entities to be scared of
-@usableFromInline
 @inline(__always)
+@usableFromInline
+@_alwaysEmitIntoClient
 internal func _rawsize<T>(for type: T.Type, count: Int, from offset: Int) -> Int {
     let padding = (-offset) & (MemoryLayout<T>.alignment - 1)
     let begin   = offset + padding
@@ -161,8 +162,9 @@ internal func _rawsize<T>(for type: T.Type, count: Int, from offset: Int) -> Int
     return end
 }
 
-@usableFromInline
 @inline(__always)
+@usableFromInline
+@_alwaysEmitIntoClient
 internal func _reserve<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
     let end   = begin + count * MemoryLayout<T>.stride
