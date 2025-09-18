@@ -15,6 +15,8 @@ public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
     }
 
     @inlinable
+    @inline(__always)
+    @_alwaysEmitIntoClient
     public subscript(index: Int) -> A {
         get {
             A.to(self.arrayData[index])
@@ -77,6 +79,7 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
     }
 
     @inlinable
+    @inline(__always)
     @_alwaysEmitIntoClient
     public subscript(index: Int) -> A {
         get {
