@@ -1,5 +1,7 @@
 // Copyright (c) 2025 PassiveLogic, Inc.
 
+// swiftlint:disable identifier_name
+
 public struct T2<A, B> {
     public let _0: A
     public let _1: B
