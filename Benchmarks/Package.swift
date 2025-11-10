@@ -2,7 +2,6 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
-import CompilerPluginSupport
 
 let package = Package(
     name: "swift-multiarray-benchmarks",
@@ -18,13 +17,13 @@ let package = Package(
             dependencies: [
                 "Randy",
                 .product(name: "MultiArray", package: "swift-multiarray"),
-                .product(name: "Benchmark", package: "package-benchmark")
+                .product(name: "Benchmark", package: "package-benchmark"),
             ],
             path: "Benchmarks",
             swiftSettings: [
                 .unsafeFlags([
                     // "-Rpass-missed=specialize"
-                ])
+                ]),
             ],
             plugins: [
                 .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),

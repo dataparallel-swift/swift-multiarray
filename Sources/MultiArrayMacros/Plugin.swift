@@ -1,3 +1,5 @@
+// Copyright (c) 2025 PassiveLogic, Inc.
+
 import SwiftCompilerPlugin
 import SwiftSyntaxMacros
 
@@ -7,4 +9,3 @@ struct MultiArrayPlugins: CompilerPlugin {
         GenericExtensionMacro.self,
     ]
 }
-

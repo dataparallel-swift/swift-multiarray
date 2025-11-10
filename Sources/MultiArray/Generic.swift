@@ -1,3 +1,5 @@
+// Copyright (c) 2025 PassiveLogic, Inc.
+
 // A simple datatype-generic protocol. This protocol is intended to be _open_,
 // in that users can add conformance for their own data types.
 //
@@ -17,7 +19,6 @@
 //
 // A true sum-of-products (or rather, product-of-sums) representation would
 // probably be better, but this is good enough for now.
-
 public protocol Generic {
     associatedtype Rep
     @inlinable @inline(__always) static func from(_ x: Self) -> Rep
@@ -81,7 +82,7 @@ public extension SIMD {
 
 // Unit: constructors without arguments
 public struct U {
-    @inlinable @inline(__always) init() { }
+    @inlinable @inline(__always) init() {}
 }
 
 extension U: Generic {
@@ -118,10 +119,11 @@ public struct P<A, B> {
 extension P: Generic where A: Generic, B: Generic {
     public typealias Rep = P<A.Rep, B.Rep>
     @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep {
-        Self.Rep( A.from(x._0), B.from(x._1) )
+        Self.Rep(A.from(x._0), B.from(x._1))
     }
+
     @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self {
-        Self( A.to(x._0), B.to(x._1) )
+        Self(A.to(x._0), B.to(x._1))
     }
 }
 
@@ -139,15 +141,15 @@ extension S: Generic where A: Generic, B: Generic {
     public typealias Rep = S<A.Rep, B.Rep>
     @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep {
         switch x {
-            case .L(let a): .L(A.from(a))
-            case .R(let b): .R(B.from(b))
+            case let .L(a): .L(A.from(a))
+            case let .R(b): .R(B.from(b))
         }
     }
+
     @inlinable @inline(__always) public static func to(_ x: Self.Rep) -> Self {
         switch x {
-            case .L(let a): .L(A.to(a))
-            case .R(let b): .R(B.to(b))
+            case let .L(a): .L(A.to(a))
+            case let .R(b): .R(B.to(b))
         }
     }
 }
-
