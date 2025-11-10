@@ -1,5 +1,4 @@
 import Benchmark
-import BenchmarkFunctions
 import Randy
 import MultiArray
 

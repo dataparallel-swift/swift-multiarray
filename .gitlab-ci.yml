@@ -25,6 +25,8 @@ include:
       job-stage: test
   # - component: gitlab.com/PassiveLogic/ci/swift-test@4
   - component: gitlab.com/PassiveLogic/ci/swift-benchmarks@4
+    inputs:
+      benchmark-package-path: "Benchmarks"
   - component: gitlab.com/PassiveLogic/ci/swift-api-check@4
 
   # deploy stage
