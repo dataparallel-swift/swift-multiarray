@@ -185,20 +185,20 @@ extension Product: Generic where A: Generic, B: Generic {
 // TODO: This is just a simply binary sum, which will work but we should really
 // make a sum-of-products style representation, so that for the array storage
 // it's easier to represent with a single tag array.
-public enum S<A, B> {
-    case L(A)
-    case R(B)
+public enum Sum<A, B> {
+    case lhs(A)
+    case rhs(B)
 }
 
-extension S: Generic where A: Generic, B: Generic {
-    public typealias Rep = S<A.Rep, B.Rep>
+extension Sum: Generic where A: Generic, B: Generic {
+    public typealias Rep = Sum<A.Rep, B.Rep>
 
     @inlinable
     @inline(__always)
     public static func from(_ x: Self) -> Self.Rep {
         switch x {
-            case let .L(a): .L(A.from(a))
-            case let .R(b): .R(B.from(b))
+            case let .lhs(a): .lhs(A.from(a))
+            case let .rhs(b): .rhs(B.from(b))
         }
     }
 
@@ -206,8 +206,8 @@ extension S: Generic where A: Generic, B: Generic {
     @inline(__always)
     public static func to(_ x: Self.Rep) -> Self {
         switch x {
-            case let .L(a): .L(A.to(a))
-            case let .R(b): .R(B.to(b))
+            case let .lhs(a): .lhs(A.to(a))
+            case let .rhs(b): .rhs(B.to(b))
         }
     }
 }
