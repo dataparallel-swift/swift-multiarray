@@ -13,9 +13,9 @@ public struct T2<A, B> {
 }
 
 extension T2: Generic where A: Generic, B: Generic {
-    public typealias Rep = P<A, B>.Rep
+    public typealias Rep = Product<A, B>.Rep
     @inlinable @inline(__always) public static func from(_ x: Self) -> Self.Rep {
-        P(
+        Product(
             A.from(x._0),
             B.from(x._1)
         )

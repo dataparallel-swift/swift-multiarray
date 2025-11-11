@@ -217,7 +217,7 @@ extension K: ArrayData {
 }
 
 // Product
-extension P: ArrayData where A: ArrayData, B: ArrayData {
+extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias ArrayDataR = (A.ArrayDataR, B.ArrayDataR)
     @inlinable
     // @inline(__always)

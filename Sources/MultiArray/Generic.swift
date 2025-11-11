@@ -152,7 +152,7 @@ extension K: Generic {
 }
 
 // Products: encode multiple arguments to constructors
-public struct P<A, B> {
+public struct Product<A, B> {
     public let _0: A
     public let _1: B
 
@@ -164,8 +164,8 @@ public struct P<A, B> {
     }
 }
 
-extension P: Generic where A: Generic, B: Generic {
-    public typealias Rep = P<A.Rep, B.Rep>
+extension Product: Generic where A: Generic, B: Generic {
+    public typealias Rep = Product<A.Rep, B.Rep>
 
     @inlinable
     @inline(__always)
