@@ -197,8 +197,8 @@ extension Sum: Generic where A: Generic, B: Generic {
     @inline(__always)
     public static func from(_ x: Self) -> Self.Rep {
         switch x {
-            case let .lhs(a): .lhs(A.from(a))
-            case let .rhs(b): .rhs(B.from(b))
+            case let .lhs(value): .lhs(A.from(value))
+            case let .rhs(value): .rhs(B.from(value))
         }
     }
 
@@ -206,8 +206,8 @@ extension Sum: Generic where A: Generic, B: Generic {
     @inline(__always)
     public static func to(_ x: Self.Rep) -> Self {
         switch x {
-            case let .lhs(a): .lhs(A.to(a))
-            case let .rhs(b): .rhs(B.to(b))
+            case let .lhs(value): .lhs(A.to(value))
+            case let .rhs(value): .rhs(B.to(value))
         }
     }
 }
