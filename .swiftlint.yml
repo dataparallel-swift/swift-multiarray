@@ -2,3 +2,6 @@ identifier_name:
   excluded:
     - _0
     - _1
+    - x
+    - y
+    - z

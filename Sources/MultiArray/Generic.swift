@@ -24,11 +24,11 @@ public protocol Generic {
 
     @inlinable
     @inline(__always)
-    static func from(_ x: Self) -> Rep
+    static func from(_ value: Self) -> Rep
 
     @inlinable
     @inline(__always)
-    static func to(_ x: Rep) -> Self
+    static func to(_ value: Rep) -> Self
 }
 
 @attached(extension, conformances: Generic, names: arbitrary)
@@ -66,22 +66,22 @@ extension Bool: Generic {
 
     @inlinable
     @inline(__always)
-    public static func from(_ x: Self) -> Self.Rep { x ? 1 : 0 }
+    public static func from(_ value: Self) -> Self.Rep { value ? 1 : 0 }
 
     @inlinable
     @inline(__always)
-    public static func to(_ x: Self.Rep) -> Self { x != 0 }
+    public static func to(_ value: Self.Rep) -> Self { value != 0 }
 }
 
 public extension FixedWidthInteger {
     typealias Rep = Self
     @inlinable
     @inline(__always)
-    static func from(_ x: Self) -> Self.Rep { x }
+    static func from(_ value: Self) -> Self.Rep { value }
 
     @inlinable
     @inline(__always)
-    static func to(_ x: Self.Rep) -> Self { x }
+    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 public extension BinaryFloatingPoint {
@@ -89,11 +89,11 @@ public extension BinaryFloatingPoint {
 
     @inlinable
     @inline(__always)
-    static func from(_ x: Self) -> Self.Rep { x }
+    static func from(_ value: Self) -> Self.Rep { value }
 
     @inlinable
     @inline(__always)
-    static func to(_ x: Self.Rep) -> Self { x }
+    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 public extension SIMD {
@@ -101,11 +101,11 @@ public extension SIMD {
 
     @inlinable
     @inline(__always)
-    static func from(_ x: Self) -> Self.Rep { x }
+    static func from(_ value: Self) -> Self.Rep { value }
 
     @inlinable
     @inline(__always)
-    static func to(_ x: Self.Rep) -> Self { x }
+    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 // Unit: constructors without arguments
@@ -120,11 +120,11 @@ extension U: Generic {
 
     @inlinable
     @inline(__always)
-    public static func from(_ x: Self) -> Self.Rep { x }
+    public static func from(_ value: Self) -> Self.Rep { value }
 
     @inlinable
     @inline(__always)
-    public static func to(_ x: Self.Rep) -> Self { x }
+    public static func to(_ value: Self.Rep) -> Self { value }
 }
 
 // Constant: Encode boxed/constant data (i.e. don't do anything with it; will
@@ -134,8 +134,8 @@ public struct K<A> {
 
     @inlinable
     @inline(__always)
-    public init(_ x: A) {
-        self.unK = x
+    public init(_ value: A) {
+        self.unK = value
     }
 }
 
@@ -144,11 +144,11 @@ extension K: Generic {
 
     @inlinable
     @inline(__always)
-    public static func from(_ x: Self) -> Self.Rep { x }
+    public static func from(_ value: Self) -> Self.Rep { value }
 
     @inlinable
     @inline(__always)
-    public static func to(_ x: Self.Rep) -> Self { x }
+    public static func to(_ value: Self.Rep) -> Self { value }
 }
 
 // Products: encode multiple arguments to constructors
@@ -169,14 +169,14 @@ extension Product: Generic where A: Generic, B: Generic {
 
     @inlinable
     @inline(__always)
-    public static func from(_ x: Self) -> Self.Rep {
-        Self.Rep(A.from(x._0), B.from(x._1))
+    public static func from(_ value: Self) -> Self.Rep {
+        Self.Rep(A.from(value._0), B.from(value._1))
     }
 
     @inlinable
     @inline(__always)
-    public static func to(_ x: Self.Rep) -> Self {
-        Self(A.to(x._0), B.to(x._1))
+    public static func to(_ value: Self.Rep) -> Self {
+        Self(A.to(value._0), B.to(value._1))
     }
 }
 
@@ -195,17 +195,17 @@ extension Sum: Generic where A: Generic, B: Generic {
 
     @inlinable
     @inline(__always)
-    public static func from(_ x: Self) -> Self.Rep {
-        switch x {
-            case let .lhs(value): .lhs(A.from(value))
-            case let .rhs(value): .rhs(B.from(value))
+    public static func from(_ value: Self) -> Self.Rep {
+        switch value {
+            case let .lhs(left): .lhs(A.from(left))
+            case let .rhs(right): .rhs(B.from(right))
         }
     }
 
     @inlinable
     @inline(__always)
-    public static func to(_ x: Self.Rep) -> Self {
-        switch x {
+    public static func to(_ value: Self.Rep) -> Self {
+        switch value {
             case let .lhs(value): .lhs(A.to(value))
             case let .rhs(value): .rhs(B.to(value))
         }

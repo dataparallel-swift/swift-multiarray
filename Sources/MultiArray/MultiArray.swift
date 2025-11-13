@@ -31,8 +31,8 @@ extension MultiArray {
     @inlinable
     public func map<B: Generic>(_ transform: (A) -> B) -> MultiArray<B> {
         var result = MultiArray<B>(unsafeUninitializedCapacity: self.count)
-        for i in 0 ..< self.count {
-            result[i] = transform(self[i])
+        for index in 0 ..< self.count {
+            result[index] = transform(self[index])
         }
         return result
     }
@@ -42,8 +42,8 @@ extension MultiArray {
     @inlinable
     public func toArray() -> Array<A> {
         .init(unsafeUninitializedCapacity: self.count, initializingWith: { buffer, initializedCount in
-            for i in 0 ..< self.count {
-                buffer.initializeElement(at: i, to: self[i])
+            for index in 0 ..< self.count {
+                buffer.initializeElement(at: index, to: self[index])
             }
             initializedCount = self.count
         })
@@ -53,11 +53,11 @@ extension MultiArray {
 extension Array where Element: Generic, Element.Rep: ArrayData {
     @inlinable
     public func toMultiArray() -> MultiArray<Element> {
-        var marr = MultiArray<Element>(unsafeUninitializedCapacity: self.count)
-        for i in 0 ..< self.count {
-            marr[i] = self[i]
+        var multiArray = MultiArray<Element>(unsafeUninitializedCapacity: self.count)
+        for index in 0 ..< self.count {
+            multiArray[index] = self[index]
         }
-        return marr
+        return multiArray
     }
 }
 
