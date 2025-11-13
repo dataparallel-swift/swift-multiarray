@@ -1,14 +1,15 @@
+// Copyright (c) 2025 PassiveLogic, Inc.
+
 // Storage of datatype-generic values with an underlying struct-of-arrays
 // representation. This is intended to be _closed_, as it only operates over the
 // fixed set of Generic representation types.
-
 public protocol ArrayData {
     associatedtype ArrayDataR
     static func readArrayData(_ arrayData: ArrayDataR, index: Int) -> Self
     static func writeArrayData(_ arrayData: inout ArrayDataR, index: Int, value: Self)
 
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> ArrayDataR
-    static func rawsize(capacity: Int, from offset: Int) -> Int
+    static func rawSize(capacity: Int, from offset: Int) -> Int
 }
 
 // Primal types
@@ -46,6 +47,7 @@ public extension FixedWidthInteger {
     static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
         arrayData[index]
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
@@ -57,13 +59,14 @@ public extension FixedWidthInteger {
     // @inline(__always)
     // @_alwaysEmitIntoClient
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        _reserve(for: Self.self, count: capacity, from: &context)
+        reserveCapacity(for: Self.self, count: capacity, from: &context)
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    static func rawsize(capacity: Int, from offset: Int) -> Int {
-        _rawsize(for: Self.self, count: capacity, from: offset)
+    static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: Self.self, count: capacity, from: offset)
     }
 }
 
@@ -75,6 +78,7 @@ public extension BinaryFloatingPoint {
     static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
         arrayData[index]
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
@@ -86,13 +90,14 @@ public extension BinaryFloatingPoint {
     // @inline(__always)
     // @_alwaysEmitIntoClient
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        _reserve(for: Self.self, count: capacity, from: &context)
+        reserveCapacity(for: Self.self, count: capacity, from: &context)
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    static func rawsize(capacity: Int, from offset: Int) -> Int {
-        _rawsize(for: Self.self, count: capacity, from: offset)
+    static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: Self.self, count: capacity, from: offset)
     }
 }
 
@@ -104,6 +109,7 @@ public extension SIMD {
     static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
         arrayData[index]
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
@@ -115,35 +121,36 @@ public extension SIMD {
     // @inline(__always)
     // @_alwaysEmitIntoClient
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        _reserve(for: Self.self, count: capacity, from: &context)
+        reserveCapacity(for: Self.self, count: capacity, from: &context)
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    static func rawsize(capacity: Int, from offset: Int) -> Int {
-        _rawsize(for: Self.self, count: capacity, from: offset)
+    static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: Self.self, count: capacity, from: offset)
     }
 }
 
 // Unit
 extension U: ArrayData {
-    public typealias ArrayDataR = ()
+    public typealias ArrayDataR = Void
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self { .init() }
+    public static func readArrayData(_: Self.ArrayDataR, index _: Int) -> Self { .init() }
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) { }
+    public static func writeArrayData(_: inout Self.ArrayDataR, index _: Int, value _: Self) {}
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR { () }
+    public static func reserve(capacity _: Int, from _: inout UnsafeMutableRawPointer) -> Self.ArrayDataR { () }
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawsize(capacity: Int, from offset: Int) -> Int { offset }
+    public static func rawSize(capacity _: Int, from offset: Int) -> Int { offset }
 }
 
 // Constant
@@ -177,7 +184,7 @@ extension K: ArrayData {
     // @inlinable
     // // @inline(__always)
     // // @_alwaysEmitIntoClient
-    // public static func rawsize(capacity: Int, from offset: Int) -> Int { offset }
+    // public static func rawSize(capacity: Int, from offset: Int) -> Int { offset }
 
     public typealias ArrayDataR = UnsafeMutablePointer<A>
     @inlinable
@@ -186,37 +193,42 @@ extension K: ArrayData {
     public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
         K(arrayData[index])
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
     public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
-        (arrayData+index).initialize(to: value.unK)
+        (arrayData + index).initialize(to: value.unK)
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        _reserve(for: A.self, count: capacity, from: &context)
+        reserveCapacity(for: A.self, count: capacity, from: &context)
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawsize(capacity: Int, from offset: Int) -> Int {
-        _rawsize(for: A.self, count: capacity, from: offset)
+    public static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: A.self, count: capacity, from: offset)
     }
 }
 
 // Product
-extension P: ArrayData where A: ArrayData, B: ArrayData {
+extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias ArrayDataR = (A.ArrayDataR, B.ArrayDataR)
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
-        .init(A.readArrayData(arrayData.0, index: index),
-              B.readArrayData(arrayData.1, index: index))
+        .init(
+            A.readArrayData(arrayData.0, index: index),
+            B.readArrayData(arrayData.1, index: index)
+        )
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
@@ -233,11 +245,12 @@ extension P: ArrayData where A: ArrayData, B: ArrayData {
         let bR = B.reserve(capacity: capacity, from: &context)
         return (aR, bR)
     }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawsize(capacity: Int, from offset: Int) -> Int {
-        _rawsize(for: B.self, count: capacity, from: _rawsize(for: A.self, count: capacity, from: offset))
+    public static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: B.self, count: capacity, from: getRawSize(for: A.self, count: capacity, from: offset))
     }
 }
 
@@ -247,7 +260,6 @@ extension P: ArrayData where A: ArrayData, B: ArrayData {
 // representation (which we may then want to invert into a product-of-sum style
 // to reuse the underlying storage for the individual fields).
 
-
 // Internal helpers
 //
 // We could also reduce the duplication here if we could treat addresses as Ints
@@ -256,10 +268,10 @@ extension P: ArrayData where A: ArrayData, B: ArrayData {
 // @inlinable
 // @inline(__always)
 // @_alwaysEmitIntoClient
-internal func _rawsize<T>(for type: T.Type, count: Int, from offset: Int) -> Int {
-    let padding = (-offset) & (MemoryLayout<T>.alignment - 1)
-    let begin   = offset + padding
-    let end     = begin + count * MemoryLayout<T>.stride
+internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int {
+    let padding = -offset & (MemoryLayout<T>.alignment - 1)
+    let begin = offset + padding
+    let end = begin + count * MemoryLayout<T>.stride
     return end
 }
 
@@ -267,10 +279,9 @@ internal func _rawsize<T>(for type: T.Type, count: Int, from offset: Int) -> Int
 // @inlinable
 // @inline(__always)
 // @_alwaysEmitIntoClient
-internal func _reserve<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
+internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
-    let end   = begin + count * MemoryLayout<T>.stride
-    context   = end
+    let end = begin + count * MemoryLayout<T>.stride
+    context = end
     return begin.bindMemory(to: type, capacity: count)
 }
-

@@ -1,15 +1,16 @@
+// Copyright (c) 2025 PassiveLogic, Inc.
+
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-
 public struct GenericExtensionMacro: ExtensionMacro {
     public static func expansion(
-        of node: AttributeSyntax,
-        attachedTo declaration: some DeclGroupSyntax,
+        of _: AttributeSyntax,
+        attachedTo _: some DeclGroupSyntax,
         providingExtensionsOf type: some TypeSyntaxProtocol,
-        conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext
+        conformingTo _: [TypeSyntax],
+        in _: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
         let genericExtension = try ExtensionDeclSyntax("""
             extension \(type.trimmed): Generic {
@@ -23,4 +24,3 @@ public struct GenericExtensionMacro: ExtensionMacro {
         return [genericExtension]
     }
 }
-

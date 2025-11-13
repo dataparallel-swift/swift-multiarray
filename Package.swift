@@ -1,14 +1,14 @@
 // swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
-import PackageDescription
 import CompilerPluginSupport
+import PackageDescription
 
 let package = Package(
     name: "swift-multiarray",
     platforms: [.macOS(.v15)],
     products: [
-        .library(name: "MultiArray", targets: ["MultiArray"])
+        .library(name: "MultiArray", targets: ["MultiArray"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0"),
@@ -17,8 +17,8 @@ let package = Package(
         .target(
             name: "MultiArray",
             dependencies: [
-                "MultiArrayMacros"
-            ],
+                "MultiArrayMacros",
+            ]
         ),
         .macro(
             name: "MultiArrayMacros",
@@ -26,8 +26,8 @@ let package = Package(
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
-            ],
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+            ]
         ),
     ]
 )

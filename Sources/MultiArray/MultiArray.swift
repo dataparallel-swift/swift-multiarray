@@ -1,14 +1,14 @@
+// Copyright (c) 2025 PassiveLogic, Inc.
 
 // An array where the elements are stored in struct-of-array style. This
 // can provide better data locality and enable efficient (automatic)
 // vectorisation.
 //
 public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
-    @usableFromInline let arrayData : MultiArrayData<A.Rep>
+    @usableFromInline
+    let arrayData: MultiArrayData<A.Rep>
 
-    public var count: Int {
-        get { arrayData.capacity }
-    }
+    public var count: Int { arrayData.capacity }
 
     public init(unsafeUninitializedCapacity count: Int) {
         self.arrayData = .init(unsafeUninitializedCapacity: count)
@@ -30,9 +30,9 @@ public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
 extension MultiArray {
     @inlinable
     public func map<B: Generic>(_ transform: (A) -> B) -> MultiArray<B> {
-        var result = MultiArray<B>.init(unsafeUninitializedCapacity: self.count)
-        for i in 0 ..< self.count {
-            result[i] = transform(self[i])
+        var result = MultiArray<B>(unsafeUninitializedCapacity: self.count)
+        for index in 0 ..< self.count {
+            result[index] = transform(self[index])
         }
         return result
     }
@@ -42,8 +42,8 @@ extension MultiArray {
     @inlinable
     public func toArray() -> Array<A> {
         .init(unsafeUninitializedCapacity: self.count, initializingWith: { buffer, initializedCount in
-            for i in 0 ..< self.count {
-                buffer.initializeElement(at: i, to: self[i])
+            for index in 0 ..< self.count {
+                buffer.initializeElement(at: index, to: self[index])
             }
             initializedCount = self.count
         })
@@ -53,11 +53,11 @@ extension MultiArray {
 extension Array where Element: Generic, Element.Rep: ArrayData {
     @inlinable
     public func toMultiArray() -> MultiArray<Element> {
-        var marr = MultiArray<Element>.init(unsafeUninitializedCapacity: self.count)
-        for i in 0 ..< self.count {
-            marr[i] = self[i]
+        var multiArray = MultiArray<Element>(unsafeUninitializedCapacity: self.count)
+        for index in 0 ..< self.count {
+            multiArray[index] = self[index]
         }
-        return marr
+        return multiArray
     }
 }
 
@@ -66,16 +66,22 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
 // now), or as pointers into GPU memory, or some other format such as
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
-@usableFromInline final class MultiArrayData<A: ArrayData> {
-    @usableFromInline let capacity: Int
-    @usableFromInline var storage: A.ArrayDataR // storing the internal pointers for speed(?), but we could also recompute them from the base context
-    @usableFromInline var context: UnsafeMutableRawPointer
+@usableFromInline
+final class MultiArrayData<A: ArrayData> {
+    @usableFromInline
+    let capacity: Int
+
+    @usableFromInline
+    var storage: A.ArrayDataR // storing the internal pointers for speed(?), but we could also recompute them from the base context
+
+    @usableFromInline
+    var context: UnsafeMutableRawPointer
 
     public init(unsafeUninitializedCapacity count: Int) {
-        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawsize(capacity: count, from: 0), alignment: 16)
+        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
         self.capacity = count
-        self.context  = context
-        self.storage  = A.reserve(capacity: count, from: &context)
+        self.context = context
+        self.storage = A.reserve(capacity: count, from: &context)
     }
 
     @inlinable
@@ -94,4 +100,3 @@ extension Array where Element: Generic, Element.Rep: ArrayData {
         self.context.deallocate()
     }
 }
-
