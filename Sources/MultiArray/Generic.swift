@@ -31,6 +31,16 @@ public protocol Generic {
     static func to(_ value: Rep) -> Self
 }
 
+extension Generic where Rep == Self {
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func from(_ value: Self) -> Self.Rep { value }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func to(_ value: Self.Rep) -> Self { value }
+}
+
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 
@@ -75,37 +85,14 @@ extension Bool: Generic {
 
 public extension FixedWidthInteger {
     typealias Rep = Self
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 public extension BinaryFloatingPoint {
     typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 public extension SIMD {
     typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
 }
 
 // Unit: constructors without arguments
@@ -116,15 +103,7 @@ public struct U {
 }
 
 extension U: Generic {
-    public typealias Rep = U
-
-    @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self { value }
+    public typealias Rep = Self
 }
 
 // Constant: Encode boxed/constant data (i.e. don't do anything with it; will
@@ -141,14 +120,6 @@ public struct K<A> {
 
 extension K: Generic {
     public typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self { value }
 }
 
 // Products: encode multiple arguments to constructors
