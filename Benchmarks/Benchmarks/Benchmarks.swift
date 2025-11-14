@@ -2,7 +2,6 @@
 
 import Benchmark
 import MultiArray
-import Randy
 
 let benchmarks: @Sendable () -> Void = {
     Benchmark.defaultConfiguration = .init(
@@ -11,7 +10,7 @@ let benchmarks: @Sendable () -> Void = {
         maxDuration: .seconds(10)
     )
 
-    var gen = UniformRandomNumberGenerator()
+    var gen = SystemRandomNumberGenerator()
     let configs: [(Int, BenchmarkScalingFactor)] = [
         // (100, .one),
         // (1000, .one),
@@ -69,7 +68,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     func setupArray(size: Int) -> Array<Zone> {
-        return Array<Zone>.random(count: size, using: &gen)
+        return randomArray(count: size, using: &gen)
     }
 
     func setupMultiArray(size: Int) -> MultiArray<Zone> {
