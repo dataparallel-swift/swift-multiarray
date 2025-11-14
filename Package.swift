@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "MultiArray", targets: ["MultiArray"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0" ..< "603.0.0"),
     ],
     targets: [
         .target(

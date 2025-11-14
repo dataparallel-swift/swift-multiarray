@@ -13,22 +13,27 @@
 // functionality that works for any representable type.
 //
 // Representable types are members of the `Generic` protocol, which defines the
-// type `Rep` as well as conversion functions `from` and `to`. Typically, you
-// will not define `Generic` instances by hand, but have the `@Generic` macro
-// derive them for you.
+// type `Representation` as well as conversion functions `from` and `to`.
+// Typically, you will not define `Generic` instances by hand, but have the
+// `@Generic` macro derive them for you.
 //
 // A true sum-of-products (or rather, product-of-sums) representation would
 // probably be better, but this is good enough for now.
 public protocol Generic {
-    associatedtype Rep
+    associatedtype Representation
+
+    static func from(_ value: Self) -> Representation
+    static func to(_ value: Representation) -> Self
+}
+
+extension Generic where Representation == Self {
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func from(_ value: Self) -> Self.Representation { value }
 
     @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Rep
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Rep) -> Self
+    @_alwaysEmitIntoClient
+    public static func to(_ value: Self.Representation) -> Self { value }
 }
 
 @attached(extension, conformances: Generic, names: arbitrary)
@@ -62,93 +67,54 @@ extension SIMD32: Generic {}
 extension SIMD64: Generic {}
 
 extension Bool: Generic {
-    public typealias Rep = UInt8
+    public typealias Representation = UInt8
 
     @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep { value ? 1 : 0 }
+    @_alwaysEmitIntoClient
+    public static func from(_ value: Self) -> Self.Representation { value ? 1 : 0 }
 
     @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self { value != 0 }
+    @_alwaysEmitIntoClient
+    public static func to(_ value: Self.Representation) -> Self { value != 0 }
 }
 
 public extension FixedWidthInteger {
-    typealias Rep = Self
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
+    typealias Representation = Self
 }
 
 public extension BinaryFloatingPoint {
-    typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
+    typealias Representation = Self
 }
 
 public extension SIMD {
-    typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    static func to(_ value: Self.Rep) -> Self { value }
+    typealias Representation = Self
 }
 
 // Unit: constructors without arguments
-public struct U {
+public struct Unit {
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     init() {}
 }
 
-extension U: Generic {
-    public typealias Rep = U
-
-    @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self { value }
+extension Unit: Generic {
+    public typealias Representation = Self
 }
 
 // Constant: Encode boxed/constant data (i.e. don't do anything with it; will
 // not be encoded into a struct-of-array representation)
-public struct K<A> {
-    public let unK: A
+public struct Box<A> {
+    public let unbox: A
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(_ value: A) {
-        self.unK = value
+        self.unbox = value
     }
 }
 
-extension K: Generic {
-    public typealias Rep = Self
-
-    @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep { value }
-
-    @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self { value }
+extension Box: Generic {
+    public typealias Representation = Self
 }
 
 // Products: encode multiple arguments to constructors
@@ -157,7 +123,7 @@ public struct Product<A, B> {
     public let _1: B
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(_ lhs: A, _ rhs: B) {
         self._0 = lhs
         self._1 = rhs
@@ -165,17 +131,17 @@ public struct Product<A, B> {
 }
 
 extension Product: Generic where A: Generic, B: Generic {
-    public typealias Rep = Product<A.Rep, B.Rep>
+    public typealias Representation = Product<A.Representation, B.Representation>
 
     @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep {
-        Self.Rep(A.from(value._0), B.from(value._1))
+    @_alwaysEmitIntoClient
+    public static func from(_ value: Self) -> Self.Representation {
+        Self.Representation(A.from(value._0), B.from(value._1))
     }
 
     @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self {
+    @_alwaysEmitIntoClient
+    public static func to(_ value: Self.Representation) -> Self {
         Self(A.to(value._0), B.to(value._1))
     }
 }
@@ -191,11 +157,11 @@ public enum Sum<A, B> {
 }
 
 extension Sum: Generic where A: Generic, B: Generic {
-    public typealias Rep = Sum<A.Rep, B.Rep>
+    public typealias Representation = Sum<A.Representation, B.Representation>
 
     @inlinable
-    @inline(__always)
-    public static func from(_ value: Self) -> Self.Rep {
+    @_alwaysEmitIntoClient
+    public static func from(_ value: Self) -> Self.Representation {
         switch value {
             case let .lhs(left): .lhs(A.from(left))
             case let .rhs(right): .rhs(B.from(right))
@@ -203,8 +169,8 @@ extension Sum: Generic where A: Generic, B: Generic {
     }
 
     @inlinable
-    @inline(__always)
-    public static func to(_ value: Self.Rep) -> Self {
+    @_alwaysEmitIntoClient
+    public static func to(_ value: Self.Representation) -> Self {
         switch value {
             case let .lhs(value): .lhs(A.to(value))
             case let .rhs(value): .rhs(B.to(value))
