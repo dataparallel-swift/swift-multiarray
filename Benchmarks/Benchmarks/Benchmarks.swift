@@ -74,12 +74,7 @@ let benchmarks: @Sendable () -> Void = {
 
     func setupMultiArray(size: Int) -> MultiArray<Zone> {
         let array = setupArray(size: size)
-        var multiArray = MultiArray<Zone>(unsafeUninitializedCapacity: size)
-
-        for index in 0 ..< size {
-            multiArray[index] = array[index]
-        }
-
+        let multiArray = array.toMultiArray()
         return multiArray
     }
 }
