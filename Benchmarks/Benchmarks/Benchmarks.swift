@@ -89,7 +89,7 @@ struct Vec3<Element> {
     let x, y, z: Element
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(x: Element, y: Element, z: Element) {
         self.x = x
         self.y = y
@@ -98,17 +98,17 @@ struct Vec3<Element> {
 }
 
 extension Vec3: Generic where Element: Generic {
-    typealias Rep = T3<Element, Element, Element>.Rep
+    typealias Representation = T3<Element, Element, Element>.Representation
 
     @inlinable
-    @inline(__always)
-    static func from(_ self: Self) -> Self.Rep {
+    @_alwaysEmitIntoClient
+    static func from(_ self: Self) -> Self.Representation {
         T3.from(T3(self.x, self.y, self.z))
     }
 
     @inlinable
-    @inline(__always)
-    static func to(_ rep: Self.Rep) -> Self {
+    @_alwaysEmitIntoClient
+    static func to(_ rep: Self.Representation) -> Self {
         let T3 = T3<Element, Element, Element>.to(rep)
         return Vec3(x: T3._0, y: T3._1, z: T3._2)
     }
@@ -125,7 +125,7 @@ extension Vec3: Randomizable where Element: Randomizable {
 }
 
 struct Zone: Randomizable & Generic {
-    typealias Rep = T2<Int, Vec3<Float>>.Rep
+    typealias Representation = T2<Int, Vec3<Float>>.Representation
 
     @usableFromInline
     let id: Int
@@ -134,7 +134,7 @@ struct Zone: Randomizable & Generic {
     let position: Vec3<Float>
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(id: Int, position: Vec3<Float>) {
         self.id = id
         self.position = position
@@ -152,14 +152,14 @@ struct Zone: Randomizable & Generic {
     }
 
     @inlinable
-    @inline(__always)
-    static func from(_ self: Self) -> Self.Rep {
+    @_alwaysEmitIntoClient
+    static func from(_ self: Self) -> Self.Representation {
         T2.from(T2(self.id, self.position))
     }
 
     @inlinable
-    @inline(__always)
-    static func to(_ rep: Self.Rep) -> Self {
+    @_alwaysEmitIntoClient
+    static func to(_ rep: Self.Representation) -> Self {
         let T2 = T2<Int, Vec3<Float>>.to(rep)
         return Zone(id: T2._0, position: T2._1)
     }
