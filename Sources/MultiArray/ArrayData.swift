@@ -80,19 +80,19 @@ public extension SIMD {
 // Unit
 extension U: ArrayData {
     public typealias ArrayDataR = Void
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func readArrayData(_: Self.ArrayDataR, index _: Int) -> Self { .init() }
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func writeArrayData(_: inout Self.ArrayDataR, index _: Int, value _: Self) {}
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func reserve(capacity _: Int, from _: inout UnsafeMutableRawPointer) -> Self.ArrayDataR { () }
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func rawSize(capacity _: Int, from offset: Int) -> Int { offset }
@@ -132,7 +132,7 @@ extension K: ArrayData {
     // public static func rawSize(capacity: Int, from offset: Int) -> Int { offset }
 
     public typealias ArrayDataR = UnsafeMutablePointer<A>
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
@@ -161,7 +161,7 @@ extension K: ArrayData {
 // Product
 extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias ArrayDataR = (A.ArrayDataR, B.ArrayDataR)
-    
+
     @inlinable
     @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
