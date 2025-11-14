@@ -22,12 +22,7 @@
 public protocol Generic {
     associatedtype Rep
 
-    @inlinable
-    @inline(__always)
     static func from(_ value: Self) -> Rep
-
-    @inlinable
-    @inline(__always)
     static func to(_ value: Rep) -> Self
 }
 
@@ -75,11 +70,11 @@ extension Bool: Generic {
     public typealias Rep = UInt8
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func from(_ value: Self) -> Self.Rep { value ? 1 : 0 }
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func to(_ value: Self.Rep) -> Self { value != 0 }
 }
 
@@ -98,7 +93,7 @@ public extension SIMD {
 // Unit: constructors without arguments
 public struct U {
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     init() {}
 }
 
@@ -112,7 +107,7 @@ public struct K<A> {
     public let unK: A
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(_ value: A) {
         self.unK = value
     }
@@ -128,7 +123,7 @@ public struct Product<A, B> {
     public let _1: B
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public init(_ lhs: A, _ rhs: B) {
         self._0 = lhs
         self._1 = rhs
@@ -139,13 +134,13 @@ extension Product: Generic where A: Generic, B: Generic {
     public typealias Rep = Product<A.Rep, B.Rep>
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func from(_ value: Self) -> Self.Rep {
         Self.Rep(A.from(value._0), B.from(value._1))
     }
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func to(_ value: Self.Rep) -> Self {
         Self(A.to(value._0), B.to(value._1))
     }
@@ -165,7 +160,7 @@ extension Sum: Generic where A: Generic, B: Generic {
     public typealias Rep = Sum<A.Rep, B.Rep>
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func from(_ value: Self) -> Self.Rep {
         switch value {
             case let .lhs(left): .lhs(A.from(left))
@@ -174,7 +169,7 @@ extension Sum: Generic where A: Generic, B: Generic {
     }
 
     @inlinable
-    @inline(__always)
+    @_alwaysEmitIntoClient
     public static func to(_ value: Self.Rep) -> Self {
         switch value {
             case let .lhs(value): .lhs(A.to(value))

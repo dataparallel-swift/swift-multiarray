@@ -8,14 +8,15 @@ public struct MultiArray<A> where A: Generic, A.Rep: ArrayData {
     @usableFromInline
     let arrayData: MultiArrayData<A.Rep>
 
+    @inlinable
     public var count: Int { arrayData.capacity }
 
+    @inlinable
     public init(unsafeUninitializedCapacity count: Int) {
         self.arrayData = .init(unsafeUninitializedCapacity: count)
     }
 
     @inlinable
-    @inline(__always)
     @_alwaysEmitIntoClient
     public subscript(index: Int) -> A {
         get {
@@ -77,6 +78,7 @@ final class MultiArrayData<A: ArrayData> {
     @usableFromInline
     var context: UnsafeMutableRawPointer
 
+    @inlinable
     public init(unsafeUninitializedCapacity count: Int) {
         var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
         self.capacity = count
@@ -85,7 +87,6 @@ final class MultiArrayData<A: ArrayData> {
     }
 
     @inlinable
-    @inline(__always)
     @_alwaysEmitIntoClient
     public subscript(index: Int) -> A {
         get {
