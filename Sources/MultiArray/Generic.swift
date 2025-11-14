@@ -13,9 +13,9 @@
 // functionality that works for any representable type.
 //
 // Representable types are members of the `Generic` protocol, which defines the
-// type `Representation` as well as conversion functions `from` and `to`. Typically, you
-// will not define `Generic` instances by hand, but have the `@Generic` macro
-// derive them for you.
+// type `Representation` as well as conversion functions `from` and `to`.
+// Typically, you will not define `Generic` instances by hand, but have the
+// `@Generic` macro derive them for you.
 //
 // A true sum-of-products (or rather, product-of-sums) representation would
 // probably be better, but this is good enough for now.

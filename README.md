@@ -44,8 +44,8 @@ For convenience we provide synonyms for tuples from 2 to 16 elements (`T2`,
 As you can see, this is a straightforward translation over the structure of the
 datatype into an isomorphic representation using (nested) pairs. As far as the
 compiler is concerned, the in-memory layout of `Vec3<Float>` and
-`Vec3<Float>.Representation` is identical, so in practice (i.e. with sufficient inlining)
-this representation change should be a no-op.
+`Vec3<Float>.Representation` is identical, so in practice (i.e. with sufficient
+inlining) this representation change should be a no-op.
 
 Similarly, the following works exactly as you would expect:
 
