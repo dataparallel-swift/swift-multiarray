@@ -12,6 +12,32 @@ public protocol ArrayData {
     static func rawSize(capacity: Int, from offset: Int) -> Int
 }
 
+extension ArrayData where ArrayDataR == UnsafeMutablePointer<Self> {
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
+        arrayData[index]
+    }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
+        arrayData[index] = value
+    }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
+        reserveCapacity(for: Self.self, count: capacity, from: &context)
+    }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public static func rawSize(capacity: Int, from offset: Int) -> Int {
+        getRawSize(for: Self.self, count: capacity, from: offset)
+    }
+}
+
 // Primal types
 extension Int: ArrayData {}
 extension Int8: ArrayData {}
@@ -41,95 +67,14 @@ extension SIMD64: ArrayData {}
 
 public extension FixedWidthInteger {
     typealias ArrayDataR = UnsafeMutablePointer<Self>
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
-        arrayData[index]
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
-        arrayData[index] = value
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        reserveCapacity(for: Self.self, count: capacity, from: &context)
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func rawSize(capacity: Int, from offset: Int) -> Int {
-        getRawSize(for: Self.self, count: capacity, from: offset)
-    }
 }
 
 public extension BinaryFloatingPoint {
     typealias ArrayDataR = UnsafeMutablePointer<Self>
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
-        arrayData[index]
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
-        arrayData[index] = value
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        reserveCapacity(for: Self.self, count: capacity, from: &context)
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func rawSize(capacity: Int, from offset: Int) -> Int {
-        getRawSize(for: Self.self, count: capacity, from: offset)
-    }
 }
 
 public extension SIMD {
     typealias ArrayDataR = UnsafeMutablePointer<Self>
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
-        arrayData[index]
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
-        arrayData[index] = value
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-        reserveCapacity(for: Self.self, count: capacity, from: &context)
-    }
-
-    @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
-    static func rawSize(capacity: Int, from offset: Int) -> Int {
-        getRawSize(for: Self.self, count: capacity, from: offset)
-    }
 }
 
 // Unit
