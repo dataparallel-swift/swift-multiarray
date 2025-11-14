@@ -100,37 +100,6 @@ extension Unit: ArrayData {
 
 // Constant
 extension Box: ArrayData {
-    // // Using a full Array here seems wasteful; surely we can do better by
-    // // stuffing values into a buffer? See also Unmanaged.
-    // public typealias ArrayDataR = Array<A>
-    // @inlinable
-    // // @inline(__always)
-    // // @_alwaysEmitIntoClient
-    // public static func readArrayData(_ arrayData: Self.ArrayDataR, index: Int) -> Self {
-    //     K(arrayData[index])
-    // }
-    // @inlinable
-    // // @inline(__always)
-    // // @_alwaysEmitIntoClient
-    // public static func writeArrayData(_ arrayData: inout Self.ArrayDataR, index: Int, value: Self) {
-    //     arrayData.withUnsafeMutableBufferPointer{ buffer in
-    //         buffer.initializeElement(at: index, to: value.unK)
-    //     }
-    // }
-
-    // @inlinable
-    // // @inline(__always)
-    // // @_alwaysEmitIntoClient
-    // public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.ArrayDataR {
-    //     .init(unsafeUninitializedCapacity: capacity, initializingWith: { buffer, initializedCount in
-    //         initializedCount = capacity
-    //     })
-    // }
-    // @inlinable
-    // // @inline(__always)
-    // // @_alwaysEmitIntoClient
-    // public static func rawSize(capacity: Int, from offset: Int) -> Int { offset }
-
     public typealias Buffer = UnsafeMutablePointer<A>
 
     @inlinable
