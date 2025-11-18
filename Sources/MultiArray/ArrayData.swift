@@ -14,25 +14,29 @@ public protocol ArrayData {
 
 extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
         arrayData[index]
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
         arrayData[index] = value
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         reserveCapacity(for: Self.self, count: capacity, from: &context)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: Self.self, count: capacity, from: offset)
     }
@@ -82,19 +86,22 @@ extension Unit: ArrayData {
     public typealias Buffer = Void
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func readArrayData(_: Self.Buffer, index _: Int) -> Self { .init() }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @_alwaysEmitIntoClient
     public static func writeArrayData(_: inout Self.Buffer, index _: Int, value _: Self) {}
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func reserve(capacity _: Int, from _: inout UnsafeMutableRawPointer) -> Self.Buffer { () }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func rawSize(capacity _: Int, from offset: Int) -> Int { offset }
 }
 
@@ -103,25 +110,29 @@ extension Box: ArrayData {
     public typealias Buffer = UnsafeMutablePointer<A>
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
         Box(arrayData[index])
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
         (arrayData + index).initialize(to: value.unbox)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         reserveCapacity(for: A.self, count: capacity, from: &context)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: A.self, count: capacity, from: offset)
     }
@@ -132,7 +143,8 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias Buffer = (A.Buffer, B.Buffer)
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
         .init(
             A.readArrayData(arrayData.0, index: index),
@@ -141,14 +153,16 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
         A.writeArrayData(&arrayData.0, index: index, value: value._0)
         B.writeArrayData(&arrayData.1, index: index, value: value._1)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         let aR = A.reserve(capacity: capacity, from: &context)
         let bR = B.reserve(capacity: capacity, from: &context)
@@ -156,7 +170,8 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
+    // @inline(__always)
+    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: B.self, count: capacity, from: getRawSize(for: A.self, count: capacity, from: offset))
     }
@@ -173,8 +188,10 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
 // We could also reduce the duplication here if we could treat addresses as Ints
 // and not magically unsafe entities to be scared of
 
-@inlinable
-@_alwaysEmitIntoClient
+// @inlinable
+// @inline(__always)
+// @_alwaysEmitIntoClient
+@usableFromInline
 internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int {
     let padding = -offset & (MemoryLayout<T>.alignment - 1)
     let begin = offset + padding
@@ -182,8 +199,10 @@ internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int 
     return end
 }
 
-@inlinable
-@_alwaysEmitIntoClient
+// @inlinable
+// @inline(__always)
+// @_alwaysEmitIntoClient
+@usableFromInline
 internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
     let end = begin + count * MemoryLayout<T>.stride
