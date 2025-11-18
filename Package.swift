@@ -29,5 +29,11 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]
         ),
+        .testTarget(
+            name: "MultiArrayTests",
+            dependencies: [
+                "MultiArray",
+            ]
+        ),
     ]
 )
