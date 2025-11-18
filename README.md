@@ -35,7 +35,7 @@ extension Vec3: Generic where Element: Generic {
 }
 ```
 
-Here `P` is a simple pair type, because Swift does not allow us to extend
+Here `Product` is a simple pair type, because Swift does not allow us to extend
 regular tuples `(,)`. Boo.
 
 For convenience we provide synonyms for tuples from 2 to 16 elements (`T2`,
