@@ -5,11 +5,7 @@ protocol Randomizable {
 }
 
 extension Int: Randomizable {}
-extension Int16: Randomizable {}
-extension Int32: Randomizable {}
-extension Int64: Randomizable {}
 extension Float32: Randomizable {}
-extension Float64: Randomizable {}
 
 extension FixedWidthInteger {
     static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self {

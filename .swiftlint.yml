@@ -1,7 +1,10 @@
 identifier_name:
   excluded:
-    - _0
-    - _1
-    - x
-    - y
-    - z
+    - _0 # reminiscent of tuple.0
+    - _1 # reminiscent of tuple.1
+    - i # canonical loop variable
+    - j # canonical loop variable
+    - k # canonical loop variable
+    - x # canonical axis label
+    - y # canonical axis label
+    - z # canonical axis label

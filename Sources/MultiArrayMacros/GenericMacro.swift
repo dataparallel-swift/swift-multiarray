@@ -16,7 +16,7 @@ public struct GenericExtensionMacro: ExtensionMacro {
             extension \(type.trimmed): Generic {
                 public typealias Representation = Unit
 
-                @inlinable 
+                @inlinable
                 @_alwaysEmitIntoClient
                 public static func from(_ x: Self) -> Self.Representation { fatalError("from") }
 

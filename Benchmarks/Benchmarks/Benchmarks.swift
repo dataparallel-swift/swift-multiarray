@@ -134,6 +134,8 @@ struct Zone: Randomizable & Generic {
         self.position = position
     }
 
+    @inlinable
+    @_alwaysEmitIntoClient
     func move(dx: Float = 0, dy: Float = 0, dz: Float = 0) -> Zone {
         Zone(id: self.id, position: Vec3(x: self.position.x + dx, y: self.position.y + dy, z: self.position.z + dz))
     }
