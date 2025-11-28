@@ -33,19 +33,19 @@
 // probably be better, but this is good enough for now.
 public protocol Generic {
     associatedtype RawRepresentation
-
-    static func from(_ value: Self) -> RawRepresentation
-    static func to(_ value: RawRepresentation) -> Self
+    
+    var rawRepresentation: RawRepresentation { get }
+    init(from rep: RawRepresentation)
 }
 
 extension Generic where RawRepresentation == Self {
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.RawRepresentation { value }
+    public var rawRepresentation: Self { self }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.RawRepresentation) -> Self { value }
+    public init(from rep: RawRepresentation) { self = rep }
 }
 
 @attached(extension, conformances: Generic, names: arbitrary)
@@ -86,11 +86,13 @@ extension Bool: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.RawRepresentation { value ? 1 : 0 }
+    public var rawRepresentation: UInt8 { self ? 1 : 0 }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.RawRepresentation) -> Self { value != 0 }
+    public init(from rep: RawRepresentation) {
+        self = rep != 0
+    }
 }
 
 public extension FixedWidthInteger {
@@ -150,14 +152,17 @@ extension Product: Generic where A: Generic, B: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.RawRepresentation {
-        Self.RawRepresentation(A.from(value._0), B.from(value._1))
+    public var rawRepresentation: Product<A.RawRepresentation, B.RawRepresentation> {
+        .init(self._0.rawRepresentation, self._1.rawRepresentation)
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.RawRepresentation) -> Self {
-        Self(A.to(value._0), B.to(value._1))
+    public init(from rep: RawRepresentation) {
+        self = Product(
+            A(from: rep._0),
+            B(from: rep._1)
+        )
     }
 }
 
@@ -176,19 +181,19 @@ extension Sum: Generic where A: Generic, B: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.RawRepresentation {
-        switch value {
-            case let .lhs(left): .lhs(A.from(left))
-            case let .rhs(right): .rhs(B.from(right))
+    public var rawRepresentation: Sum<A.RawRepresentation, B.RawRepresentation> {
+        switch self {
+            case let .lhs(left): .lhs(left.rawRepresentation)
+            case let .rhs(right): .rhs(right.rawRepresentation)
         }
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.RawRepresentation) -> Self {
-        switch value {
-            case let .lhs(value): .lhs(A.to(value))
-            case let .rhs(value): .rhs(B.to(value))
+    public init(from rep: RawRepresentation) {
+        self = switch rep {
+            case let .lhs(left): .lhs(A(from: left))
+            case let .rhs(right): .rhs(B(from: right))
         }
     }
 }

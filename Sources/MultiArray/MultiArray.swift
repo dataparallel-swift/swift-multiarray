@@ -32,10 +32,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     @_alwaysEmitIntoClient
     public subscript(index: Int) -> Element {
         get {
-            Element.to(self.arrayData[index])
+            Element(from: self.arrayData[index])
         }
         set(value) {
-            self.arrayData[index] = Element.from(value)
+            self.arrayData[index] = value.rawRepresentation
         }
     }
 }

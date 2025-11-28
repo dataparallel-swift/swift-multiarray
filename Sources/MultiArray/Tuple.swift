@@ -31,19 +31,19 @@ extension T2: Generic where A: Generic, B: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
+    public var rawRepresentation: Self.RawRepresentation {
         Product(
-            A.from(x._0),
-            B.from(x._1)
+            _0.rawRepresentation,
+            _1.rawRepresentation
         )
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T2(
-            A.to(x._0),
-            B.to(x._1)
+    public init(from rep: RawRepresentation) {
+        self = T2(
+            A(from: rep._0),
+            B(from: rep._1)
         )
     }
 }
@@ -67,17 +67,17 @@ extension T3: Generic where A: Generic, B: Generic, C: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T2(x._0, x._1), x._2))
+    public var rawRepresentation: T2<T2<A, B>, C>.RawRepresentation {
+        T2(T2(_0, _1), _2).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T3(
-            A.to(x._0._0),
-            B.to(x._0._1),
-            C.to(x._1)
+    public init(from rep: RawRepresentation) {
+        self = T3(
+            A(from: rep._0._0),
+            B(from: rep._0._1),
+            C(from: rep._1)
         )
     }
 }
@@ -103,18 +103,18 @@ extension T4: Generic where A: Generic, B: Generic, C: Generic, D: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T2(x._0, x._1), T2(x._2, x._3)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T2(_0, _1), T2(_2, _3)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T4(
-            A.to(x._0._0),
-            B.to(x._0._1),
-            C.to(x._1._0),
-            D.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T4(
+            A(from: rep._0._0),
+            B(from: rep._0._1),
+            C(from: rep._1._0),
+            D(from: rep._1._1)
         )
     }
 }
@@ -142,19 +142,19 @@ extension T5: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T4(x._0, x._1, x._2, x._3), x._4))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T4(_0, _1, _2, _3), _4).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T5(
-            A.to(x._0._0._0),
-            B.to(x._0._0._1),
-            C.to(x._0._1._0),
-            D.to(x._0._1._1),
-            E.to(x._1)
+    public init(from rep: RawRepresentation) {
+        self = T5(
+            A(from: rep._0._0._0),
+            B(from: rep._0._0._1),
+            C(from: rep._0._1._0),
+            D(from: rep._0._1._1),
+            E(from: rep._1)
         )
     }
 }
@@ -184,20 +184,20 @@ extension T6: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T4(x._0, x._1, x._2, x._3), T2(x._4, x._5)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T4(_0, _1, _2, _3), T2(_4, _5)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T6(
-            A.to(x._0._0._0),
-            B.to(x._0._0._1),
-            C.to(x._0._1._0),
-            D.to(x._0._1._1),
-            E.to(x._1._0),
-            F.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T6(
+            A(from: rep._0._0._0),
+            B(from: rep._0._0._1),
+            C(from: rep._0._1._0),
+            D(from: rep._0._1._1),
+            E(from: rep._1._0),
+            F(from: rep._1._1)
         )
     }
 }
@@ -229,21 +229,21 @@ extension T7: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T4(x._0, x._1, x._2, x._3), T3(x._4, x._5, x._6)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T4(_0, _1, _2, _3), T3(_4, _5, _6)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T7(
-            A.to(x._0._0._0),
-            B.to(x._0._0._1),
-            C.to(x._0._1._0),
-            D.to(x._0._1._1),
-            E.to(x._1._0._0),
-            F.to(x._1._0._1),
-            G.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T7(
+            A(from: rep._0._0._0),
+            B(from: rep._0._0._1),
+            C(from: rep._0._1._0),
+            D(from: rep._0._1._1),
+            E(from: rep._1._0._0),
+            F(from: rep._1._0._1),
+            G(from: rep._1._1)
         )
     }
 }
@@ -277,22 +277,22 @@ extension T8: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T4(x._0, x._1, x._2, x._3), T4(x._4, x._5, x._6, x._7)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T4(_0, _1, _2, _3), T4(_4, _5, _6, _7)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T8(
-            A.to(x._0._0._0),
-            B.to(x._0._0._1),
-            C.to(x._0._1._0),
-            D.to(x._0._1._1),
-            E.to(x._1._0._0),
-            F.to(x._1._0._1),
-            G.to(x._1._1._0),
-            H.to(x._1._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T8(
+            A(from: rep._0._0._0),
+            B(from: rep._0._0._1),
+            C(from: rep._0._1._0),
+            D(from: rep._0._1._1),
+            E(from: rep._1._0._0),
+            F(from: rep._1._0._1),
+            G(from: rep._1._1._0),
+            H(from: rep._1._1._1)
         )
     }
 }
@@ -328,23 +328,23 @@ extension T9: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), x._8))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), _8).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T9(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1)
+    public init(from rep: RawRepresentation) {
+        self = T9(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1)
         )
     }
 }
@@ -384,24 +384,24 @@ extension T10: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T2(x._8, x._9)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T2(_8, _9)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T10(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0),
-            J.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T10(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0),
+            J(from: rep._1._1)
         )
     }
 }
@@ -455,25 +455,25 @@ extension T11: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T3(x._8, x._9, x._10)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T3(_8, _9, _10)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T11(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0),
-            J.to(x._1._0._1),
-            K.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T11(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0),
+            J(from: rep._1._0._1),
+            K(from: rep._1._1)
         )
     }
 }
@@ -530,26 +530,26 @@ extension T12: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T4(x._8, x._9, x._10, x._11)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T4(_8, _9, _10, _11)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T12(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0),
-            J.to(x._1._0._1),
-            K.to(x._1._1._0),
-            L.to(x._1._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T12(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0),
+            J(from: rep._1._0._1),
+            K(from: rep._1._1._0),
+            L(from: rep._1._1._1)
         )
     }
 }
@@ -609,27 +609,27 @@ extension T13: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T5(x._8, x._9, x._10, x._11, x._12)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T5(_8, _9, _10, _11, _12)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T13(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0._0),
-            J.to(x._1._0._0._1),
-            K.to(x._1._0._1._0),
-            L.to(x._1._0._1._1),
-            M.to(x._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T13(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0._0),
+            J(from: rep._1._0._0._1),
+            K(from: rep._1._0._1._0),
+            L(from: rep._1._0._1._1),
+            M(from: rep._1._1)
         )
     }
 }
@@ -692,28 +692,28 @@ extension T14: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T6(x._8, x._9, x._10, x._11, x._12, x._13)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T6(_8, _9, _10, _11, _12, _13)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T14(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0._0),
-            J.to(x._1._0._0._1),
-            K.to(x._1._0._1._0),
-            L.to(x._1._0._1._1),
-            M.to(x._1._1._0),
-            N.to(x._1._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T14(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0._0),
+            J(from: rep._1._0._0._1),
+            K(from: rep._1._0._1._0),
+            L(from: rep._1._0._1._1),
+            M(from: rep._1._1._0),
+            N(from: rep._1._1._1)
         )
     }
 }
@@ -779,29 +779,29 @@ extension T15: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T7(x._8, x._9, x._10, x._11, x._12, x._13, x._14)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T7(_8, _9, _10, _11, _12, _13, _14)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T15(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0._0),
-            J.to(x._1._0._0._1),
-            K.to(x._1._0._1._0),
-            L.to(x._1._0._1._1),
-            M.to(x._1._1._0._0),
-            N.to(x._1._1._0._1),
-            O.to(x._1._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T15(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0._0),
+            J(from: rep._1._0._0._1),
+            K(from: rep._1._0._1._0),
+            L(from: rep._1._0._1._1),
+            M(from: rep._1._1._0._0),
+            N(from: rep._1._1._0._1),
+            O(from: rep._1._1._1)
         )
     }
 }
@@ -870,30 +870,30 @@ extension T16: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ x: Self) -> Self.RawRepresentation {
-        T2.from(T2(T8(x._0, x._1, x._2, x._3, x._4, x._5, x._6, x._7), T8(x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15)))
+    public var rawRepresentation: Self.RawRepresentation {
+        T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T8(_8, _9, _10, _11, _12, _13, _14, _15)).rawRepresentation
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ x: Self.RawRepresentation) -> Self {
-        T16(
-            A.to(x._0._0._0._0),
-            B.to(x._0._0._0._1),
-            C.to(x._0._0._1._0),
-            D.to(x._0._0._1._1),
-            E.to(x._0._1._0._0),
-            F.to(x._0._1._0._1),
-            G.to(x._0._1._1._0),
-            H.to(x._0._1._1._1),
-            I.to(x._1._0._0._0),
-            J.to(x._1._0._0._1),
-            K.to(x._1._0._1._0),
-            L.to(x._1._0._1._1),
-            M.to(x._1._1._0._0),
-            N.to(x._1._1._0._1),
-            O.to(x._1._1._1._0),
-            P.to(x._1._1._1._1)
+    public init(from rep: RawRepresentation) {
+        self = T16(
+            A(from: rep._0._0._0._0),
+            B(from: rep._0._0._0._1),
+            C(from: rep._0._0._1._0),
+            D(from: rep._0._0._1._1),
+            E(from: rep._0._1._0._0),
+            F(from: rep._0._1._0._1),
+            G(from: rep._0._1._1._0),
+            H(from: rep._0._1._1._1),
+            I(from: rep._1._0._0._0),
+            J(from: rep._1._0._0._1),
+            K(from: rep._1._0._1._0),
+            L(from: rep._1._0._1._1),
+            M(from: rep._1._1._0._0),
+            N(from: rep._1._1._0._1),
+            O(from: rep._1._1._1._0),
+            P(from: rep._1._1._1._1)
         )
     }
 }
