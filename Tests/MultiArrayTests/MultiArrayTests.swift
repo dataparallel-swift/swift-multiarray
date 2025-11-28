@@ -16,17 +16,22 @@ import MultiArray
 import Testing
 
 struct Point: Generic, Equatable, Randomizable {
-    typealias Representation = Product<Double, Double>
+    typealias RawRepresentation = Product<Double, Double>
 
     var x: Double
     var y: Double
 
-    static func from(_ value: Point) -> Product<Double, Double> {
-        .init(value.x, value.y)
+    var rawRepresentation: Product<Double, Double> {
+        .init(x, y)
+    }
+    
+    init(x: Double, y: Double) {
+        self.x = x
+        self.y = y
     }
 
-    static func to(_ value: Product<Double, Double>) -> Point {
-        .init(x: value._0, y: value._1)
+    init(from rep: RawRepresentation) {
+        self = .init(x: rep._0, y: rep._1)
     }
 
     static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self {
@@ -48,15 +53,15 @@ struct Vec3<Element>: Equatable where Element: Equatable {
 }
 
 extension Vec3: Generic where Element: Generic {
-    typealias Representation = T3<Element, Element, Element>.Representation
+    typealias RawRepresentation = T3<Element, Element, Element>.RawRepresentation
 
-    static func from(_ self: Self) -> Self.Representation {
-        T3.from(T3(self.x, self.y, self.z))
+    var rawRepresentation: RawRepresentation {
+        T3(self.x, self.y, self.z).rawRepresentation
     }
 
-    static func to(_ rep: Self.Representation) -> Self {
-        let T3 = T3<Element, Element, Element>.to(rep)
-        return Vec3(x: T3._0, y: T3._1, z: T3._2)
+    init(from rep: RawRepresentation) {
+        let T3 = T3<Element, Element, Element>(from: rep)
+        self = Vec3(x: T3._0, y: T3._1, z: T3._2)
     }
 }
 
@@ -71,7 +76,7 @@ extension Vec3: Randomizable where Element: Randomizable {
 }
 
 struct Zone: Generic, Equatable, Randomizable {
-    typealias Representation = T2<Int, Vec3<Float>>.Representation
+    typealias RawRepresentation = T2<Int, Vec3<Float>>.RawRepresentation
 
     let id: Int
     let position: Vec3<Float>
@@ -85,13 +90,17 @@ struct Zone: Generic, Equatable, Randomizable {
         Zone(id: self.id, position: Vec3(x: self.position.x + dx, y: self.position.y + dy, z: self.position.z + dz))
     }
 
-    static func from(_ self: Self) -> Self.Representation {
-        T2.from(T2(self.id, self.position))
+    var rawRepresentation: RawRepresentation {
+        T2(self.id, self.position).rawRepresentation
     }
 
-    static func to(_ rep: Self.Representation) -> Self {
-        let T2 = T2<Int, Vec3<Float>>.to(rep)
+    static func to(_ rep: Self.RawRepresentation) -> Self {
+        let T2 = T2<Int, Vec3<Float>>(from: rep)
         return Zone(id: T2._0, position: T2._1)
+    }
+
+    init(from rep: RawRepresentation) {
+        self = Zone(id: rep._0, position: .init(from: rep._1))
     }
 
     static func random<T: RandomNumberGenerator>(using generator: inout T) -> Self {
@@ -184,7 +193,7 @@ struct MultiArrayTests {
 }
 
 func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations: Int = 1000)
-    where T.Representation: ArrayData
+    where T.RawRepresentation: ArrayData
 {
     var generator = SystemRandomNumberGenerator()
     let step = 100 / Double(iterations)
