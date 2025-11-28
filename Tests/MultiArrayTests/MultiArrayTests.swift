@@ -16,7 +16,7 @@ import MultiArray
 import Testing
 
 struct Point: Generic, Equatable, Randomizable {
-    typealias Representation = Product<Double, Double>
+    typealias RawRepresentation = Product<Double, Double>
 
     var x: Double
     var y: Double
@@ -48,13 +48,13 @@ struct Vec3<Element>: Equatable where Element: Equatable {
 }
 
 extension Vec3: Generic where Element: Generic {
-    typealias Representation = T3<Element, Element, Element>.Representation
+    typealias RawRepresentation = T3<Element, Element, Element>.RawRepresentation
 
-    static func from(_ self: Self) -> Self.Representation {
+    static func from(_ self: Self) -> Self.RawRepresentation {
         T3.from(T3(self.x, self.y, self.z))
     }
 
-    static func to(_ rep: Self.Representation) -> Self {
+    static func to(_ rep: Self.RawRepresentation) -> Self {
         let T3 = T3<Element, Element, Element>.to(rep)
         return Vec3(x: T3._0, y: T3._1, z: T3._2)
     }
@@ -71,7 +71,7 @@ extension Vec3: Randomizable where Element: Randomizable {
 }
 
 struct Zone: Generic, Equatable, Randomizable {
-    typealias Representation = T2<Int, Vec3<Float>>.Representation
+    typealias RawRepresentation = T2<Int, Vec3<Float>>.RawRepresentation
 
     let id: Int
     let position: Vec3<Float>
@@ -85,11 +85,11 @@ struct Zone: Generic, Equatable, Randomizable {
         Zone(id: self.id, position: Vec3(x: self.position.x + dx, y: self.position.y + dy, z: self.position.z + dz))
     }
 
-    static func from(_ self: Self) -> Self.Representation {
+    static func from(_ self: Self) -> Self.RawRepresentation {
         T2.from(T2(self.id, self.position))
     }
 
-    static func to(_ rep: Self.Representation) -> Self {
+    static func to(_ rep: Self.RawRepresentation) -> Self {
         let T2 = T2<Int, Vec3<Float>>.to(rep)
         return Zone(id: T2._0, position: T2._1)
     }
@@ -184,7 +184,7 @@ struct MultiArrayTests {
 }
 
 func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations: Int = 1000)
-    where T.Representation: ArrayData
+    where T.RawRepresentation: ArrayData
 {
     var generator = SystemRandomNumberGenerator()
     let step = 100 / Double(iterations)

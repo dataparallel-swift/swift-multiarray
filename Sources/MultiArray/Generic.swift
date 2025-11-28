@@ -25,27 +25,27 @@
 // functionality that works for any representable type.
 //
 // Representable types are members of the `Generic` protocol, which defines the
-// type `Representation` as well as conversion functions `from` and `to`.
+// type `RawRepresentation` as well as conversion functions `from` and `to`.
 // Typically, you will not define `Generic` instances by hand, but have the
 // `@Generic` macro derive them for you.
 //
 // A true sum-of-products (or rather, product-of-sums) representation would
 // probably be better, but this is good enough for now.
 public protocol Generic {
-    associatedtype Representation
+    associatedtype RawRepresentation
 
-    static func from(_ value: Self) -> Representation
-    static func to(_ value: Representation) -> Self
+    static func from(_ value: Self) -> RawRepresentation
+    static func to(_ value: RawRepresentation) -> Self
 }
 
-extension Generic where Representation == Self {
+extension Generic where RawRepresentation == Self {
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.Representation { value }
+    public static func from(_ value: Self) -> Self.RawRepresentation { value }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.Representation) -> Self { value }
+    public static func to(_ value: Self.RawRepresentation) -> Self { value }
 }
 
 @attached(extension, conformances: Generic, names: arbitrary)
@@ -82,27 +82,27 @@ extension SIMD32: Generic {}
 extension SIMD64: Generic {}
 
 extension Bool: Generic {
-    public typealias Representation = UInt8
+    public typealias RawRepresentation = UInt8
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.Representation { value ? 1 : 0 }
+    public static func from(_ value: Self) -> Self.RawRepresentation { value ? 1 : 0 }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.Representation) -> Self { value != 0 }
+    public static func to(_ value: Self.RawRepresentation) -> Self { value != 0 }
 }
 
 public extension FixedWidthInteger {
-    typealias Representation = Self
+    typealias RawRepresentation = Self
 }
 
 public extension BinaryFloatingPoint {
-    typealias Representation = Self
+    typealias RawRepresentation = Self
 }
 
 public extension SIMD {
-    typealias Representation = Self
+    typealias RawRepresentation = Self
 }
 
 // Unit: constructors without arguments
@@ -113,7 +113,7 @@ public struct Unit {
 }
 
 extension Unit: Generic {
-    public typealias Representation = Self
+    public typealias RawRepresentation = Self
 }
 
 // Constant: Encode boxed/constant data (i.e. don't do anything with it; will
@@ -129,7 +129,7 @@ public struct Box<A> {
 }
 
 extension Box: Generic {
-    public typealias Representation = Self
+    public typealias RawRepresentation = Self
 }
 
 // Products: encode multiple arguments to constructors
@@ -146,17 +146,17 @@ public struct Product<A, B> {
 }
 
 extension Product: Generic where A: Generic, B: Generic {
-    public typealias Representation = Product<A.Representation, B.Representation>
+    public typealias RawRepresentation = Product<A.RawRepresentation, B.RawRepresentation>
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.Representation {
-        Self.Representation(A.from(value._0), B.from(value._1))
+    public static func from(_ value: Self) -> Self.RawRepresentation {
+        Self.RawRepresentation(A.from(value._0), B.from(value._1))
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.Representation) -> Self {
+    public static func to(_ value: Self.RawRepresentation) -> Self {
         Self(A.to(value._0), B.to(value._1))
     }
 }
@@ -172,11 +172,11 @@ public enum Sum<A, B> {
 }
 
 extension Sum: Generic where A: Generic, B: Generic {
-    public typealias Representation = Sum<A.Representation, B.Representation>
+    public typealias RawRepresentation = Sum<A.RawRepresentation, B.RawRepresentation>
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func from(_ value: Self) -> Self.Representation {
+    public static func from(_ value: Self) -> Self.RawRepresentation {
         switch value {
             case let .lhs(left): .lhs(A.from(left))
             case let .rhs(right): .rhs(B.from(right))
@@ -185,7 +185,7 @@ extension Sum: Generic where A: Generic, B: Generic {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public static func to(_ value: Self.Representation) -> Self {
+    public static func to(_ value: Self.RawRepresentation) -> Self {
         switch value {
             case let .lhs(value): .lhs(A.to(value))
             case let .rhs(value): .rhs(B.to(value))

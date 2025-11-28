@@ -26,15 +26,15 @@ public struct GenericExtensionMacro: ExtensionMacro {
     ) throws -> [ExtensionDeclSyntax] {
         let genericExtension = try ExtensionDeclSyntax("""
             extension \(type.trimmed): Generic {
-                public typealias Representation = Unit
+                public typealias RawRepresentation = Unit
 
                 @inlinable
                 @_alwaysEmitIntoClient
-                public static func from(_ x: Self) -> Self.Representation { fatalError("from") }
+                public static func from(_ x: Self) -> Self.RawRepresentation { fatalError("from") }
 
                 @inlinable
                 @_alwaysEmitIntoClient
-                public static func to(_ x: Self.Representation) -> Self { fatalError("to") }
+                public static func to(_ x: Self.RawRepresentation) -> Self { fatalError("to") }
             }
             """
         )

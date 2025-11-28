@@ -16,9 +16,9 @@
 // can provide better data locality and enable efficient (automatic)
 // vectorisation.
 //
-public struct MultiArray<Element> where Element: Generic, Element.Representation: ArrayData {
+public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
-    let arrayData: MultiArrayData<Element.Representation>
+    let arrayData: MultiArrayData<Element.RawRepresentation>
 
     @inlinable
     public var count: Int { arrayData.capacity }
@@ -63,7 +63,7 @@ extension MultiArray {
     }
 }
 
-extension Array where Element: Generic, Element.Representation: ArrayData {
+extension Array where Element: Generic, Element.RawRepresentation: ArrayData {
     @inlinable
     public func toMultiArray() -> MultiArray<Element> {
         var multiArray = MultiArray<Element>(unsafeUninitializedCapacity: self.count)
