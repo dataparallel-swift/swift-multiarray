@@ -57,14 +57,17 @@ extension Int8: Generic {}
 extension Int16: Generic {}
 extension Int32: Generic {}
 extension Int64: Generic {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: Generic {}
 extension UInt: Generic {}
 extension UInt8: Generic {}
 extension UInt16: Generic {}
 extension UInt32: Generic {}
 extension UInt64: Generic {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension UInt128: Generic {}
 #if arch(arm64)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Float16: Generic {}
 #endif
 extension Float32: Generic {}
