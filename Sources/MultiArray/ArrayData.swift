@@ -60,14 +60,17 @@ extension Int8: ArrayData {}
 extension Int16: ArrayData {}
 extension Int32: ArrayData {}
 extension Int64: ArrayData {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: ArrayData {}
 extension UInt: ArrayData {}
 extension UInt8: ArrayData {}
 extension UInt16: ArrayData {}
 extension UInt32: ArrayData {}
 extension UInt64: ArrayData {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension UInt128: ArrayData {}
 #if arch(arm64)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Float16: ArrayData {}
 #endif
 extension Float32: ArrayData {}
