@@ -1,5 +1,8 @@
 # swift-multiarray
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fdataparallel-swift%2Fswift-multiarray%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/dataparallel-swift/swift-multiarray)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fdataparallel-swift%2Fswift-multiarray%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/dataparallel-swift/swift-multiarray)
+
 An array that stores elements in unboxed struct-of-array style. This can provide
 better data locality and enable efficient (automatic) vectorization.
 
