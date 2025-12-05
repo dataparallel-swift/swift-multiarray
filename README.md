@@ -28,12 +28,17 @@ which generates something like:
 
 ```swift
 extension Vec3: Generic where Element: Generic {
-    typealias Representation = Product<Element.Representation, Product<Element.Representation, Element.Representation>>
-    static func from(_ self: Self) -> Self.Representation {
-        Product(Element.from(self.x), Product(Element.from(self.y), Element.from(self.z)))
+    typealias RawRepresentation = Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>
+    var rawRepresentation: RawRepresentation {
+        Product(self.x.rawRepresentation, Product(self.y.rawRepresentation, self.z.rawRepresentation))
     }
-    static func to(_ rep: Self.Representation) -> Self {
-        Vec3(x: Element.to(rep._0), y: Element.to(rep._1._0), z: Element.to(rep._1._1))
+    
+    init(from rep: Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>) {
+        self = .init(
+            x: .init(from: rep._0),
+            y: .init(from: rep._1._0),
+            z: .init(from: rep._1._1)
+        )
     }
 }
 ```
@@ -47,7 +52,7 @@ For convenience we provide synonyms for tuples from 2 to 16 elements (`T2`,
 As you can see, this is a straightforward translation over the structure of the
 datatype into an isomorphic representation using (nested) pairs. As far as the
 compiler is concerned, the in-memory layout of `Vec3<Float>` and
-`Vec3<Float>.Representation` is identical, so in practice (i.e. with sufficient
+`Vec3<Float>.RawRepresentation` is identical, so in practice (i.e. with sufficient
 inlining) this representation change should be a no-op.
 
 Similarly, the following works exactly as you would expect:
@@ -61,12 +66,13 @@ struct Zone {
 
 // Generates...
 extension Zone: Generic {
-    typealias Representation = Product<Int.Representation, Vec3<Float>.Representation>
-    static func from(_ self: Self) -> Self.Representation {
-        Product(Int.from(self.id), Vec3.from(self.position))
+    typealias RawRepresentation = Product<Int.RawRepresentation, Vec3<Float>.RawRepresentation>
+    var rawRepresentation: RawRepresentation {
+        Product(self.id.rawRepresentation, self.position.rawRepresentation)
     }
-    static func to(_ rep: Self.Representation) -> Self {
-        Zone(id: Int.to(rep._0), position: Vec3.to(rep._1))
+    
+    init(from rep: RawRepresentation) {
+        self = Zone(id: rep._0, position: .init(from: rep._1))
     }
 }
 ```
