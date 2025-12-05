@@ -29,11 +29,16 @@ which generates something like:
 ```swift
 extension Vec3: Generic where Element: Generic {
     typealias RawRepresentation = Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>
-    static func from(_ self: Self) -> Self.RawRepresentation {
-        Product(Element.from(self.x), Product(Element.from(self.y), Element.from(self.z)))
+    var rawRepresentation: RawRepresentation {
+        Product(self.x.rawRepresentation, Product(self.y.rawRepresentation, self.z.rawRepresentation))
     }
-    static func to(_ rep: Self.RawRepresentation) -> Self {
-        Vec3(x: Element.to(rep._0), y: Element.to(rep._1._0), z: Element.to(rep._1._1))
+    
+    init(from rep: Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>) {
+        self = .init(
+            x: .init(from: rep._0),
+            y: .init(from: rep._1._0),
+            z: .init(from: rep._1._1)
+        )
     }
 }
 ```
@@ -62,11 +67,12 @@ struct Zone {
 // Generates...
 extension Zone: Generic {
     typealias RawRepresentation = Product<Int.RawRepresentation, Vec3<Float>.RawRepresentation>
-    static func from(_ self: Self) -> Self.RawRepresentation {
-        Product(Int.from(self.id), Vec3.from(self.position))
+    var rawRepresentation: RawRepresentation {
+        Product(self.id.rawRepresentation, self.position.rawRepresentation)
     }
-    static func to(_ rep: Self.RawRepresentation) -> Self {
-        Zone(id: Int.to(rep._0), position: Vec3.to(rep._1))
+    
+    init(from rep: RawRepresentation) {
+        self = Zone(id: rep._0, position: .init(from: rep._1))
     }
 }
 ```
