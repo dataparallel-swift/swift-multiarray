@@ -1,0 +1,27 @@
+name: Pull Request
+
+on: [pull_request]
+
+jobs:
+  Lint:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: SwiftFormat
+        run: swiftformat --lint --strict . --reporter github-actions-log
+  test-ubuntu-latest:
+    name: Test Swift 6.2 Ubuntu Latest
+    runs-on: ubuntu-latest
+    container: swift:6.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Tests
+        run: swift test -Xswiftc -warnings-as-errors
+
+  test-macos-26:
+    name: Test Swift 6.2 macos-26
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Tests
+        run: swift test -Xswiftc -warnings-as-errors
