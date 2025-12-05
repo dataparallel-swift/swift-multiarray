@@ -57,7 +57,7 @@ let benchmarks: @Sendable () -> Void = {
             "array/unzip/\(size)",
             configuration: .init(scalingFactor: scaling),
             closure: { _, input in
-                blackHole(input.map { $0.position.x })
+                blackHole(input.map(\.position.x))
             },
             setup: { setupArray(size: size) }
         )
@@ -73,14 +73,14 @@ let benchmarks: @Sendable () -> Void = {
             "multiarray/unzip/\(size)",
             configuration: .init(scalingFactor: scaling),
             closure: { _, input in
-                blackHole(input.map { $0.position.x })
+                blackHole(input.map(\.position.x))
             },
             setup: { setupMultiArray(size: size) }
         )
     }
 
     func setupArray(size: Int) -> Array<Zone> {
-        return randomArray(count: size, using: &gen)
+        randomArray(count: size, using: &gen)
     }
 
     func setupMultiArray(size: Int) -> MultiArray<Zone> {

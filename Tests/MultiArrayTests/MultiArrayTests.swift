@@ -24,7 +24,7 @@ struct Point: Generic, Equatable, Randomizable {
     var rawRepresentation: Product<Double, Double> {
         .init(x, y)
     }
-    
+
     init(x: Double, y: Double) {
         self.x = x
         self.y = y

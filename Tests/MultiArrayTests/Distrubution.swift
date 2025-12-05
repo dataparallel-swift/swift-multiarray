@@ -20,7 +20,7 @@ func linear<T: BinaryInteger>(from x: T, to y: T) -> (Size) -> ClosedRange<T> {
 }
 
 func linear<T: BinaryInteger>(around z: T, from x: T, to y: T) -> (Size) -> ClosedRange<T> {
-    return { sz in
+    { sz in
         let lower = clamp(x, y, scaleLinear(sz, z, x))
         let upper = clamp(x, y, scaleLinear(sz, z, y))
         return lower ... upper
