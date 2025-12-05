@@ -33,7 +33,7 @@
 // probably be better, but this is good enough for now.
 public protocol Generic {
     associatedtype RawRepresentation
-    
+
     var rawRepresentation: RawRepresentation { get }
     init(from rep: RawRepresentation)
 }
