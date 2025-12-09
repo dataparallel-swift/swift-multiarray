@@ -104,19 +104,19 @@ struct Vec3<Element> {
 }
 
 extension Vec3: Generic where Element: Generic {
-    typealias Representation = T3<Element, Element, Element>.Representation
+    typealias RawRepresentation = T3<Element, Element, Element>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
-    static func from(_ self: Self) -> Self.Representation {
-        T3.from(T3(self.x, self.y, self.z))
+    var rawRepresentation: RawRepresentation {
+        T3(x, y, z).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
-    static func to(_ rep: Self.Representation) -> Self {
-        let T3 = T3<Element, Element, Element>.to(rep)
-        return Vec3(x: T3._0, y: T3._1, z: T3._2)
+    init(from rep: RawRepresentation) {
+        let tup = T3<Element, Element, Element>(from: rep)
+        self.x = tup._0
+        self.y = tup._1
+        self.z = tup._2
     }
 }
 
@@ -131,7 +131,7 @@ extension Vec3: Randomizable where Element: Randomizable {
 }
 
 struct Zone: Randomizable & Generic {
-    typealias Representation = T2<Int, Vec3<Float>>.Representation
+    typealias RawRepresentation = T2<Int, Vec3<Float>>.RawRepresentation
 
     @usableFromInline
     let id: Int
@@ -160,15 +160,13 @@ struct Zone: Randomizable & Generic {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
-    static func from(_ self: Self) -> Self.Representation {
-        T2.from(T2(self.id, self.position))
+    var rawRepresentation: RawRepresentation {
+        T2(self.id, self.position).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
-    static func to(_ rep: Self.Representation) -> Self {
-        let T2 = T2<Int, Vec3<Float>>.to(rep)
-        return Zone(id: T2._0, position: T2._1)
+    init(from rep: RawRepresentation) {
+        self.id = rep._0
+        self.position = Vec3<Float>(from: rep._1)
     }
 }
