@@ -51,7 +51,7 @@ let benchmarks: @Sendable () -> Void = {
             closure: { _, input in
                 blackHole(input.map { $0.move(dx: 1) })
             },
-            setup: { setupArray(size: size) }
+            setup: { setup(size: size) }
         )
         Benchmark(
             "array/unzip/\(size)",
@@ -59,7 +59,7 @@ let benchmarks: @Sendable () -> Void = {
             closure: { _, input in
                 blackHole(input.map(\.position.x))
             },
-            setup: { setupArray(size: size) }
+            setup: { setup(size: size) }
         )
         Benchmark(
             "multiarray/move/\(size)",
@@ -67,7 +67,7 @@ let benchmarks: @Sendable () -> Void = {
             closure: { _, input in
                 blackHole(input.map { $0.move(dx: 1) })
             },
-            setup: { setupMultiArray(size: size) }
+            setup: { MultiArray(setup(size: size)) }
         )
         Benchmark(
             "multiarray/unzip/\(size)",
@@ -75,18 +75,12 @@ let benchmarks: @Sendable () -> Void = {
             closure: { _, input in
                 blackHole(input.map(\.position.x))
             },
-            setup: { setupMultiArray(size: size) }
+            setup: { MultiArray(setup(size: size)) }
         )
     }
 
-    func setupArray(size: Int) -> Array<Zone> {
+    func setup(size: Int) -> Array<Zone> {
         randomArray(count: size, using: &gen)
-    }
-
-    func setupMultiArray(size: Int) -> MultiArray<Zone> {
-        let array = setupArray(size: size)
-        let multiArray = array.toMultiArray()
-        return multiArray
     }
 }
 

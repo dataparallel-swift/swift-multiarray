@@ -111,10 +111,10 @@ struct MultiArrayTests {
     @Test
     func test1() {
         let array: [Point] = [.init(x: 1.0, y: 2.0), .init(x: 3.0, y: 4.0)]
-        let multiArray = array.toMultiArray()
+        let multiArray = MultiArray(array)
         let newArray = array.map { $0.x + 1.0 }
         let newMultiArray = multiArray.map { $0.x + 1.0 }
-        #expect(newArray == newMultiArray.toArray())
+        #expect(newArray == Array(newMultiArray))
     }
 
     @Suite
@@ -202,8 +202,8 @@ func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations:
         let size: Int64 = min(99, Int64((Double(i) * step).rounded(.towardZero)))
         let length = Int.random(in: linear(from: 0, to: 1024)(size), using: &generator)
         let scalarArray: [T] = randomArray(count: length, using: &generator)
-        let multiArray = scalarArray.toMultiArray()
-        let roundtripArray = multiArray.toArray()
+        let multiArray = MultiArray(scalarArray)
+        let roundtripArray = Array(multiArray)
 
         #expect(scalarArray == roundtripArray)
     }

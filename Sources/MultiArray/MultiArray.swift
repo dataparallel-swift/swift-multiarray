@@ -12,65 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// An array where the elements are stored in struct-of-array style. This
-// can provide better data locality and enable efficient (automatic)
-// vectorisation.
-//
+/// An array where the elements are stored in struct-of-array style. This
+/// can provide better data locality and enable efficient (automatic)
+/// vectorisation.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     let arrayData: MultiArrayData<Element.RawRepresentation>
 
+    /// The number of elements in the array.
     @inlinable
     public var count: Int { arrayData.capacity }
 
+    /// Create a new array containing the specified number of a single,
+    /// repeating value.
     @inlinable
-    public init(unsafeUninitializedCapacity count: Int) {
+    public init(repeating: Element, count: Int) {
+        self.init(count: count) { _ in repeating }
+    }
+
+    /// Create a new MultiArray by applying the given function to each index to
+    /// produce each value.
+    @inlinable
+    public init(count: Int, with generator: (Int) throws -> Element) rethrows {
         self.arrayData = .init(unsafeUninitializedCapacity: count)
-    }
-
-    @inlinable
-    @_alwaysEmitIntoClient
-    public subscript(index: Int) -> Element {
-        get {
-            Element(from: self.arrayData[index])
-        }
-        set(value) {
-            self.arrayData[index] = value.rawRepresentation
+        for i in 0 ..< count {
+            self[i] = try generator(i)
         }
     }
-}
 
-extension MultiArray {
+    /// Creates a MultiArray containing the elements of a collection.
     @inlinable
-    public func map<B: Generic>(_ transform: (Element) -> B) -> MultiArray<B> {
-        var result = MultiArray<B>(unsafeUninitializedCapacity: self.count)
-        for index in 0 ..< self.count {
-            result[index] = transform(self[index])
+    public init<C: Collection>(_ elements: C) where Self.Element == C.Element {
+        self.init(count: elements.count) { i in
+            elements[elements.index(elements.startIndex, offsetBy: i)]
         }
-        return result
     }
-}
 
-extension MultiArray {
+    /// Creates a MultiArray containing the elements of a sequence.
     @inlinable
-    public func toArray() -> Array<Element> {
-        .init(unsafeUninitializedCapacity: self.count, initializingWith: { buffer, initializedCount in
-            for index in 0 ..< self.count {
-                buffer.initializeElement(at: index, to: self[index])
-            }
-            initializedCount = self.count
-        })
-    }
-}
-
-extension Array where Element: Generic, Element.RawRepresentation: ArrayData {
-    @inlinable
-    public func toMultiArray() -> MultiArray<Element> {
-        var multiArray = MultiArray<Element>(unsafeUninitializedCapacity: self.count)
-        for index in 0 ..< self.count {
-            multiArray[index] = self[index]
+    public init<S: Sequence>(_ elements: S) where Self.Element == S.Element {
+        if #available(macOS 13.0.0, *), let c = elements as? any Collection<Self.Element> {
+            self.init(c)
         }
-        return multiArray
+        else {
+            // Sequence does not provide an exact count of the number of
+            // elements, so we can't directly create a MultiArray that is
+            // guaranteed to contain all of the elements of the sequence in a
+            // single pass. So, first buffer the sequence into a normal Array
+            // (which has an optimised implementation already) and then convert
+            // into a MultiArray from there (via the Collection initialiser).
+            self.init(Array(elements))
+        }
     }
 }
 
