@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [next]
 
+### Added
+
+- Protocol conformances to:
+    - Equatable
+    - Hashable
+    - Encodable
+    - Decodable
+    - CustomStringConvertible
+    - CustomDebugStringConvertible
+    - ExpressibleByArrayLiteral
+    - MutableCollection
+    - RandomAccessCollection
+
+### Changed
+
+- Rename `Generic.Representation` to `Generic.RawRepresentation`
+- Convert `Generic.from` from static function to computed property
+- Convert `Generic.to` from static function to type initialiser
+
 ## [1.0.0] - 2025-11-25
 
 ### Added
