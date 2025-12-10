@@ -12,99 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
 import MultiArray
 import Testing
-
-struct Point: Generic, Equatable, Randomizable {
-    typealias RawRepresentation = Product<Double, Double>
-
-    var x: Double
-    var y: Double
-
-    var rawRepresentation: Product<Double, Double> {
-        .init(x, y)
-    }
-
-    init(x: Double, y: Double) {
-        self.x = x
-        self.y = y
-    }
-
-    init(from rep: RawRepresentation) {
-        self = .init(x: rep._0, y: rep._1)
-    }
-
-    static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self {
-        Self(
-            x: Double.random(using: &generator),
-            y: Double.random(using: &generator)
-        )
-    }
-}
-
-struct Vec3<Element>: Equatable where Element: Equatable {
-    let x, y, z: Element
-
-    init(x: Element, y: Element, z: Element) {
-        self.x = x
-        self.y = y
-        self.z = z
-    }
-}
-
-extension Vec3: Generic where Element: Generic {
-    typealias RawRepresentation = T3<Element, Element, Element>.RawRepresentation
-
-    var rawRepresentation: RawRepresentation {
-        T3(self.x, self.y, self.z).rawRepresentation
-    }
-
-    init(from rep: RawRepresentation) {
-        let T3 = T3<Element, Element, Element>(from: rep)
-        self = Vec3(x: T3._0, y: T3._1, z: T3._2)
-    }
-}
-
-extension Vec3: Randomizable where Element: Randomizable {
-    static func random<T: RandomNumberGenerator>(using generator: inout T) -> Self {
-        Vec3(
-            x: Element.random(using: &generator),
-            y: Element.random(using: &generator),
-            z: Element.random(using: &generator)
-        )
-    }
-}
-
-struct Zone: Generic, Equatable, Randomizable {
-    typealias RawRepresentation = T2<Int, Vec3<Float>>.RawRepresentation
-
-    let id: Int
-    let position: Vec3<Float>
-
-    init(id: Int, position: Vec3<Float>) {
-        self.id = id
-        self.position = position
-    }
-
-    func move(dx: Float = 0, dy: Float = 0, dz: Float = 0) -> Zone {
-        Zone(id: self.id, position: Vec3(x: self.position.x + dx, y: self.position.y + dy, z: self.position.z + dz))
-    }
-
-    var rawRepresentation: RawRepresentation {
-        T2(self.id, self.position).rawRepresentation
-    }
-
-    init(from rep: RawRepresentation) {
-        self = Zone(id: rep._0, position: .init(from: rep._1))
-    }
-
-    static func random<T: RandomNumberGenerator>(using generator: inout T) -> Self {
-        Zone(
-            id: Int.random(using: &generator),
-            position: Vec3<Float>.random(using: &generator)
-        )
-    }
-}
 
 @Suite
 struct MultiArrayTests {
@@ -190,6 +100,138 @@ struct MultiArrayTests {
             @Test func testSIMD3Float64() { roundtripTest(SIMD3<Float64>.self) }
         }
     }
+
+    @Suite
+    struct CodableTests {
+        @Test
+        func testStructure() throws {
+            let array: MultiArray<Int> = [10, 20, 30]
+
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+
+            let data = try encoder.encode(array)
+
+            // Inspect the shape of the JSON dictionary
+            let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+            // Keys exist
+            #expect(jsonObject?["count"] != nil)
+            #expect(jsonObject?["values"] != nil)
+
+            // Values have expected contents
+            #expect(jsonObject?["count"] as? Int == 3)
+            #expect(jsonObject?["values"] as? [Int] == [10, 20, 30])
+        }
+
+        @Test
+        func failNotEnoughValues() throws {
+            let json = """
+            {
+                "count": 4,
+                "values": [1, 2, 3]
+            }
+            """
+
+            let data = Data(json.utf8)
+            let decoder = JSONDecoder()
+
+            #expect(throws: DecodingError.self) {
+                _ = try decoder.decode(MultiArray<Int>.self, from: data)
+            }
+        }
+
+        @Test
+        func failTooManyValues() throws {
+            let json = """
+            {
+                "count": 2,
+                "values": [1, 2, 3]
+            }
+            """
+
+            let data = Data(json.utf8)
+            let decoder = JSONDecoder()
+
+            #expect(throws: DecodingError.self) {
+                _ = try decoder.decode(MultiArray<Int>.self, from: data)
+            }
+        }
+
+        @Suite
+        struct RoundTripTests {
+            @Suite
+            struct ScalarTests {
+                @Test func testCodableInt() throws { try roundtripCodableTest(Int.self) }
+                @Test func testCodableInt8() throws { try roundtripCodableTest(Int8.self) }
+                @Test func testCodableInt16() throws { try roundtripCodableTest(Int16.self) }
+                @Test func testCodableInt32() throws { try roundtripCodableTest(Int32.self) }
+                @Test func testCodableInt64() throws { try roundtripCodableTest(Int64.self) }
+                @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+                @Test func testCodableInt128() throws { try roundtripCodableTest(Int128.self) }
+                @Test func testCodableUInt() throws { try roundtripCodableTest(UInt.self) }
+                @Test func testCodableUInt8() throws { try roundtripCodableTest(UInt8.self) }
+                @Test func testCodableUInt16() throws { try roundtripCodableTest(UInt16.self) }
+                @Test func testCodableUInt32() throws { try roundtripCodableTest(UInt32.self) }
+                @Test func testCodableUInt64() throws { try roundtripCodableTest(UInt64.self) }
+                @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+                @Test func testCodableUInt128() throws { try roundtripCodableTest(UInt128.self) }
+                #if arch(arm64)
+                @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+                @Test func testCodableFloat16() throws { try roundtripCodableTest(Float16.self) }
+                #endif
+                @Test func testCodableFloat32() throws { try roundtripCodableTest(Float32.self) }
+                @Test func testCodableFloat64() throws { try roundtripCodableTest(Float64.self) }
+                @Test func testCodableBool() throws { try roundtripCodableTest(Bool.self) }
+            }
+
+            @Suite
+            struct StructTests {
+                @Test func testCodablePoint() throws { try roundtripCodableTest(Point.self) }
+                @Test func testCodableZone() throws { try roundtripCodableTest(Zone.self) }
+            }
+
+            @Suite
+            struct SIMD2Tests {
+                @Test func testCodableSIMD2Int() throws { try roundtripCodableTest(SIMD2<Int>.self) }
+                @Test func testCodableSIMD2Int8() throws { try roundtripCodableTest(SIMD2<Int8>.self) }
+                @Test func testCodableSIMD2Int16() throws { try roundtripCodableTest(SIMD2<Int16>.self) }
+                @Test func testCodableSIMD2Int32() throws { try roundtripCodableTest(SIMD2<Int32>.self) }
+                @Test func testCodableSIMD2Int64() throws { try roundtripCodableTest(SIMD2<Int64>.self) }
+                @Test func testCodableSIMD2UInt() throws { try roundtripCodableTest(SIMD2<UInt>.self) }
+                @Test func testCodableSIMD2UInt8() throws { try roundtripCodableTest(SIMD2<UInt8>.self) }
+                @Test func testCodableSIMD2UInt16() throws { try roundtripCodableTest(SIMD2<UInt16>.self) }
+                @Test func testCodableSIMD2UInt32() throws { try roundtripCodableTest(SIMD2<UInt32>.self) }
+                @Test func testCodableSIMD2UInt64() throws { try roundtripCodableTest(SIMD2<UInt64>.self) }
+                #if arch(arm64)
+                @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+                @Test func testCodableSIMD2Float16() throws { try roundtripCodableTest(SIMD2<Float16>.self) }
+                #endif
+                @Test func testCodableSIMD2Float32() throws { try roundtripCodableTest(SIMD2<Float32>.self) }
+                @Test func testCodableSIMD2Float64() throws { try roundtripCodableTest(SIMD2<Float64>.self) }
+            }
+
+            @Suite
+            struct SIMD3Tests {
+                @Test func testCodableSIMD3Int() throws { try roundtripCodableTest(SIMD3<Int>.self) }
+                @Test func testCodableSIMD3Int8() throws { try roundtripCodableTest(SIMD3<Int8>.self) }
+                @Test func testCodableSIMD3Int16() throws { try roundtripCodableTest(SIMD3<Int16>.self) }
+                @Test func testCodableSIMD3Int32() throws { try roundtripCodableTest(SIMD3<Int32>.self) }
+                @Test func testCodableSIMD3Int64() throws { try roundtripCodableTest(SIMD3<Int64>.self) }
+                @Test func testCodableSIMD3UInt() throws { try roundtripCodableTest(SIMD3<UInt>.self) }
+                @Test func testCodableSIMD3UInt8() throws { try roundtripCodableTest(SIMD3<UInt8>.self) }
+                @Test func testCodableSIMD3UInt16() throws { try roundtripCodableTest(SIMD3<UInt16>.self) }
+                @Test func testCodableSIMD3UInt32() throws { try roundtripCodableTest(SIMD3<UInt32>.self) }
+                @Test func testCodableSIMD3UInt64() throws { try roundtripCodableTest(SIMD3<UInt64>.self) }
+                #if arch(arm64)
+                @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+                @Test func testCodableSIMD3Float16() throws { try roundtripCodableTest(SIMD3<Float16>.self) }
+                #endif
+                @Test func testCodableSIMD3Float32() throws { try roundtripCodableTest(SIMD3<Float32>.self) }
+                @Test func testCodableSIMD3Float64() throws { try roundtripCodableTest(SIMD3<Float64>.self) }
+            }
+        }
+    }
 }
 
 func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations: Int = 1000)
@@ -206,5 +248,28 @@ func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations:
         let roundtripArray = Array(multiArray)
 
         #expect(scalarArray == roundtripArray)
+    }
+}
+
+func roundtripCodableTest<T: Randomizable & Equatable & Generic & Codable>(_: T.Type, iterations: Int = 100) throws
+    where T.RawRepresentation: ArrayData
+{
+    var generator = SystemRandomNumberGenerator()
+    let step = 100 / Double(iterations)
+
+    for i in 0 ..< iterations {
+        let size: Int64 = min(99, Int64((Double(i) * step).rounded(.towardZero)))
+        let length = Int.random(in: linear(from: 0, to: 1024)(size), using: &generator)
+        let original: MultiArray<T> = MultiArray(randomArray(count: length, using: &generator))
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+
+        let data = try encoder.encode(original)
+
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(MultiArray<T>.self, from: data)
+
+        #expect(original == decoded)
     }
 }
