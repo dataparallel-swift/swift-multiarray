@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [next]
 
+## [2.0.0] - 2025-12-10
+
 ### Added
 
 - Protocol conformances to:
@@ -33,5 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 
-[next]: https://github.com/dataparallel-swift/swift-multiarray/compare/1.0.0...HEAD
+[next]: https://github.com/dataparallel-swift/swift-multiarray/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/dataparallel-swift/swift-multiarray/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/dataparallel-swift/swift-multiarray/releases/tag/1.0.0
