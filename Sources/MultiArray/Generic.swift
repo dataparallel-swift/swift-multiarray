@@ -120,12 +120,12 @@ extension Unit: Generic {
 
 // Constant: Encode boxed/constant data (i.e. don't do anything with it; will
 // not be encoded into a struct-of-array representation)
-public struct Box<A> {
-    public let unbox: A
+public struct Box<Element> {
+    public let unbox: Element
 
     @inlinable
     @_alwaysEmitIntoClient
-    public init(_ value: A) {
+    public init(_ value: Element) {
         self.unbox = value
     }
 }
