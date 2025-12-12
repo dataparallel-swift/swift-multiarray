@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
+
 protocol Randomizable {
     static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self
 }
@@ -71,6 +73,12 @@ extension SIMD3: Randomizable where Scalar: Randomizable {
 extension Bool: Randomizable {
     static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self {
         UInt.random(using: &generator) % 2 == 0
+    }
+}
+
+extension UUID: Randomizable {
+    static func random<R: RandomNumberGenerator>(using _: inout R) -> Self {
+        UUID() // use internal randomizer
     }
 }
 
