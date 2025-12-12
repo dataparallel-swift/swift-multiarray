@@ -82,6 +82,15 @@ extension UUID: Randomizable {
     }
 }
 
+extension Date: Randomizable {
+    static func random<R: RandomNumberGenerator>(using generator: inout R) -> Self {
+        let past = Date.distantPast.timeIntervalSinceReferenceDate
+        let future = Date.distantFuture.timeIntervalSinceReferenceDate
+        let somewhen = TimeInterval.random(in: past ... future, using: &generator)
+        return Date(timeIntervalSinceReferenceDate: somewhen)
+    }
+}
+
 func randomArray<R: RandomNumberGenerator, Element: Randomizable>(
     count: Int,
     using generator: inout R

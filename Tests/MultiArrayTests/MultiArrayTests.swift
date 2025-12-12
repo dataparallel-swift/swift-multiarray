@@ -59,6 +59,7 @@ struct MultiArrayTests {
             @Test func testPoint() { roundtripTest(Point.self) }
             @Test func testZone() { roundtripTest(Zone.self) }
             @Test func testUUID() { roundtripTest(UUID.self) }
+            @Test func testDate() { roundtripTest(Date.self) }
         }
 
         @Suite
