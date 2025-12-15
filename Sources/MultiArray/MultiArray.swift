@@ -78,10 +78,12 @@ final class MultiArrayData<A: ArrayData> {
     let count: Int
 
     @usableFromInline
-    var storage: A.Buffer // storing the internal pointers for speed(?), but we could also recompute them from the base context
-
-    @usableFromInline
     var context: UnsafeMutableRawPointer
+
+    // Storing the internal pointers for speed(?), but we could also recompute
+    // them from the base context.
+    @usableFromInline
+    var storage: A.Buffer
 
     @inlinable
     public init(unsafeUninitializedCapacity count: Int) {
