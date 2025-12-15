@@ -17,7 +17,7 @@
 /// vectorisation.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
-    let arrayData: MultiArrayData<Element.RawRepresentation>
+    internal let arrayData: MultiArrayData<Element.RawRepresentation>
 
     /// The number of elements in the array.
     @inlinable
@@ -73,7 +73,7 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
 @usableFromInline
-final class MultiArrayData<A: ArrayData> {
+internal final class MultiArrayData<A: ArrayData> {
     @usableFromInline
     let count: Int
 
@@ -86,7 +86,7 @@ final class MultiArrayData<A: ArrayData> {
     var storage: A.Buffer
 
     @inlinable
-    public init(unsafeUninitializedCapacity count: Int) {
+    init(unsafeUninitializedCapacity count: Int) {
         var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
         self.count = count
         self.context = context
@@ -95,7 +95,7 @@ final class MultiArrayData<A: ArrayData> {
 
     @inlinable
     @_alwaysEmitIntoClient
-    public subscript(index: Int) -> A {
+    subscript(index: Int) -> A {
         get {
             A.readArrayData(self.storage, index: index)
         }
