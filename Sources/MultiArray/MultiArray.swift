@@ -97,10 +97,10 @@ internal final class MultiArrayData<A: ArrayData> {
     @_alwaysEmitIntoClient
     subscript(index: Int) -> A {
         get {
-            A.readArrayData(self.storage, index: index)
+            A.read(self.storage, at: index)
         }
         set(value) {
-            A.writeArrayData(&self.storage, index: index, value: value)
+            A.write(self.storage, at: index, to: value)
         }
     }
 

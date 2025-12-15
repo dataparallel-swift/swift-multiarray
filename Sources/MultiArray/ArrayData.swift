@@ -17,9 +17,9 @@
 // fixed set of Generic representation types.
 public protocol ArrayData {
     associatedtype Buffer
-    static func readArrayData(_ arrayData: Buffer, index: Int) -> Self
-    static func writeArrayData(_ arrayData: inout Buffer, index: Int, value: Self)
 
+    static func read(_ arrayData: Buffer, at index: Int) -> Self
+    static func write(_ arrayData: Buffer, at index: Int, to value: Self)
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Buffer
     static func rawSize(capacity: Int, from offset: Int) -> Int
 }
@@ -28,14 +28,14 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         arrayData[index]
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         arrayData[index] = value
     }
 
@@ -103,11 +103,11 @@ extension Unit: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_: Self.Buffer, index _: Int) -> Self { .init() }
+    public static func read(_: Self.Buffer, at _: Int) -> Self { Unit() }
 
     @inlinable
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_: inout Self.Buffer, index _: Int, value _: Self) {}
+    public static func write(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
 
     @inlinable
     // @inline(__always)
@@ -127,14 +127,14 @@ extension Box: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         Box(arrayData[index])
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         (arrayData + index).initialize(to: value.unbox)
     }
 
@@ -160,19 +160,19 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         .init(
-            A.readArrayData(arrayData.0, index: index),
-            B.readArrayData(arrayData.1, index: index)
+            A.read(arrayData.0, at: index),
+            B.read(arrayData.1, at: index)
         )
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
-        A.writeArrayData(&arrayData.0, index: index, value: value._0)
-        B.writeArrayData(&arrayData.1, index: index, value: value._1)
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        A.write(arrayData.0, at: index, to: value._0)
+        B.write(arrayData.1, at: index, to: value._1)
     }
 
     @inlinable
