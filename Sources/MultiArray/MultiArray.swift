@@ -21,7 +21,7 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 
     /// The number of elements in the array.
     @inlinable
-    public var count: Int { arrayData.capacity }
+    public var count: Int { arrayData.count }
 
     /// Create a new array containing the specified number of a single,
     /// repeating value.
@@ -34,6 +34,7 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inlinable
     public init(count: Int, with generator: (Int) throws -> Element) rethrows {
+        precondition(count >= 0)
         self.arrayData = .init(unsafeUninitializedCapacity: count)
         for i in 0 ..< count {
             self[i] = try generator(i)
@@ -74,7 +75,7 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 @usableFromInline
 final class MultiArrayData<A: ArrayData> {
     @usableFromInline
-    let capacity: Int
+    let count: Int
 
     @usableFromInline
     var storage: A.Buffer // storing the internal pointers for speed(?), but we could also recompute them from the base context
@@ -85,7 +86,7 @@ final class MultiArrayData<A: ArrayData> {
     @inlinable
     public init(unsafeUninitializedCapacity count: Int) {
         var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
-        self.capacity = count
+        self.count = count
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
     }
