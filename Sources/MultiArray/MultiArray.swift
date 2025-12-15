@@ -37,7 +37,8 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
         precondition(count >= 0)
         self.arrayData = .init(unsafeUninitializedCapacity: count)
         for i in 0 ..< count {
-            self[i] = try generator(i)
+            let value = try generator(i)
+            Element.RawRepresentation.initialise(self.arrayData.storage, at: i, to: value.rawRepresentation)
         }
     }
 
@@ -105,6 +106,7 @@ internal final class MultiArrayData<A: ArrayData> {
     }
 
     deinit {
+        A.deinitialise(self.storage, count: self.count)
         self.context.deallocate()
     }
 }
