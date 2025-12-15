@@ -14,12 +14,18 @@
 
 extension MultiArray: Encodable where Element: Encodable {
     private enum CodingKeys: CodingKey {
+        case version
         case count
         case values
     }
 
+    // Current version of the encoding schema.
+    // This needs to be bumped whenever the format changes.
+    private static var codingVersion: Int { 1 }
+
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(Self.codingVersion, forKey: .version)
         try container.encode(self.count, forKey: .count)
 
         var values = container.nestedUnkeyedContainer(forKey: .values)

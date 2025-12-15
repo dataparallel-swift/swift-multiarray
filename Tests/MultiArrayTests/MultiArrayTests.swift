@@ -116,12 +116,30 @@ struct MultiArrayTests {
             let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
             // Keys exist
+            #expect(jsonObject?["version"] != nil)
             #expect(jsonObject?["count"] != nil)
             #expect(jsonObject?["values"] != nil)
 
             // Values have expected contents
+            #expect(jsonObject?["version"] as? Int == 1)
             #expect(jsonObject?["count"] as? Int == 3)
             #expect(jsonObject?["values"] as? [Int] == [10, 20, 30])
+        }
+
+        @Test
+        func decodeWithoutVersion() throws {
+            let json = """
+            {
+                "count": 3,
+                "values": [1, 2, 3]
+            }
+            """
+
+            let data = Data(json.utf8)
+            let decoder = JSONDecoder()
+
+            let decoded = try decoder.decode(MultiArray<Int>.self, from: data)
+            #expect(decoded == MultiArray<Int>([1, 2, 3]))
         }
 
         @Test
@@ -146,6 +164,24 @@ struct MultiArrayTests {
             let json = """
             {
                 "count": 2,
+                "values": [1, 2, 3]
+            }
+            """
+
+            let data = Data(json.utf8)
+            let decoder = JSONDecoder()
+
+            #expect(throws: DecodingError.self) {
+                _ = try decoder.decode(MultiArray<Int>.self, from: data)
+            }
+        }
+
+        @Test
+        func failUnsupportedVersion() throws {
+            let json = """
+            {
+                "version": 999,
+                "count": 3,
                 "values": [1, 2, 3]
             }
             """
