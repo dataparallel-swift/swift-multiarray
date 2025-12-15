@@ -122,7 +122,7 @@ extension Unit: ArrayData {
 
 // Constant
 extension Box: ArrayData {
-    public typealias Buffer = UnsafeMutablePointer<A>
+    public typealias Buffer = UnsafeMutablePointer<Element>
 
     @inlinable
     // @inline(__always)
@@ -142,14 +142,14 @@ extension Box: ArrayData {
     // @inline(__always)
     // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
-        reserveCapacity(for: A.self, count: capacity, from: &context)
+        reserveCapacity(for: Element.self, count: capacity, from: &context)
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
-        getRawSize(for: A.self, count: capacity, from: offset)
+        getRawSize(for: Element.self, count: capacity, from: offset)
     }
 }
 
