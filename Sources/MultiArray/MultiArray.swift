@@ -17,11 +17,11 @@
 /// vectorisation.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
-    let arrayData: MultiArrayData<Element.RawRepresentation>
+    internal let arrayData: MultiArrayData<Element.RawRepresentation>
 
     /// The number of elements in the array.
     @inlinable
-    public var count: Int { arrayData.capacity }
+    public var count: Int { arrayData.count }
 
     /// Create a new array containing the specified number of a single,
     /// repeating value.
@@ -34,9 +34,11 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inlinable
     public init(count: Int, with generator: (Int) throws -> Element) rethrows {
+        precondition(count >= 0)
         self.arrayData = .init(unsafeUninitializedCapacity: count)
         for i in 0 ..< count {
-            self[i] = try generator(i)
+            let value = try generator(i)
+            Element.RawRepresentation.initialise(self.arrayData.storage, at: i, to: value.rawRepresentation)
         }
     }
 
@@ -72,36 +74,39 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 // individually GC-ed arrays so that we can support O(1) zip and unzip.
 //
 @usableFromInline
-final class MultiArrayData<A: ArrayData> {
+internal final class MultiArrayData<A: ArrayData> {
     @usableFromInline
-    let capacity: Int
-
-    @usableFromInline
-    var storage: A.Buffer // storing the internal pointers for speed(?), but we could also recompute them from the base context
+    let count: Int
 
     @usableFromInline
     var context: UnsafeMutableRawPointer
 
+    // Storing the internal pointers for speed(?), but we could also recompute
+    // them from the base context.
+    @usableFromInline
+    var storage: A.Buffer
+
     @inlinable
-    public init(unsafeUninitializedCapacity count: Int) {
+    init(unsafeUninitializedCapacity count: Int) {
         var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
-        self.capacity = count
+        self.count = count
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
     }
 
     @inlinable
     @_alwaysEmitIntoClient
-    public subscript(index: Int) -> A {
+    subscript(index: Int) -> A {
         get {
-            A.readArrayData(self.storage, index: index)
+            A.read(self.storage, at: index)
         }
         set(value) {
-            A.writeArrayData(&self.storage, index: index, value: value)
+            A.write(self.storage, at: index, to: value)
         }
     }
 
     deinit {
+        A.deinitialise(self.storage, count: self.count)
         self.context.deallocate()
     }
 }

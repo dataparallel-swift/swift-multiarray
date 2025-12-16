@@ -17,25 +17,39 @@
 // fixed set of Generic representation types.
 public protocol ArrayData {
     associatedtype Buffer
-    static func readArrayData(_ arrayData: Buffer, index: Int) -> Self
-    static func writeArrayData(_ arrayData: inout Buffer, index: Int, value: Self)
+
+    static func initialise(_ arrayData: Buffer, at: Int, to value: Self)
+    static func deinitialise(_ arrayData: Buffer, count: Int)
+
+    static func read(_ arrayData: Buffer, at index: Int) -> Self
+    static func write(_ arrayData: Buffer, at index: Int, to value: Self)
 
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Buffer
     static func rawSize(capacity: Int, from offset: Int) -> Int
 }
 
+// This instance is intended for values which are trivially copyable without
+// references (i.e. machine types)
 extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
+    @inlinable
+    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        (arrayData + index).initialize(to: value)
+    }
+
+    @inlinable
+    public static func deinitialise(_: Self.Buffer, count _: Int) { /* no-op */ }
+
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         arrayData[index]
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         arrayData[index] = value
     }
 
@@ -96,18 +110,24 @@ public extension SIMD {
     typealias Buffer = UnsafeMutablePointer<Self>
 }
 
-// Unit
+// Unit: No in-memory representation
 extension Unit: ArrayData {
     public typealias Buffer = Void
 
     @inlinable
+    public static func initialise(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
+
+    @inlinable
+    public static func deinitialise(_: Self.Buffer, count _: Int) { /* no-op */ }
+
+    @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_: Self.Buffer, index _: Int) -> Self { .init() }
+    public static func read(_: Self.Buffer, at _: Int) -> Self { Unit() }
 
     @inlinable
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_: inout Self.Buffer, index _: Int, value _: Self) {}
+    public static func write(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
 
     @inlinable
     // @inline(__always)
@@ -120,22 +140,38 @@ extension Unit: ArrayData {
     public static func rawSize(capacity _: Int, from offset: Int) -> Int { offset }
 }
 
-// Constant
+// This instance is necessary for any values that are not trivially copyable,
+// i.e. class-based types (e.g. String) that are owned by somebody else, but we
+// need to keep a strong reference to. In this case initialisation and
+// de-initialisation of the raw underlying buffer are important!
 extension Box: ArrayData {
     public typealias Buffer = UnsafeMutablePointer<Element>
 
     @inlinable
+    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        (arrayData + index).initialize(to: value.unbox)
+    }
+
+    @inlinable
+    public static func deinitialise(_ arrayData: Self.Buffer, count: Int) {
+        arrayData.deinitialize(count: count)
+    }
+
+    @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         Box(arrayData[index])
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
-        (arrayData + index).initialize(to: value.unbox)
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        // Overwriting an already-initialised element will correctly
+        // de-initialise any existing element. This is called via the subscript
+        // operator and not during initialisation of the multiarray.
+        arrayData[index] = value.unbox
     }
 
     @inlinable
@@ -158,21 +194,33 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias Buffer = (A.Buffer, B.Buffer)
 
     @inlinable
+    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        A.initialise(arrayData.0, at: index, to: value._0)
+        B.initialise(arrayData.1, at: index, to: value._1)
+    }
+
+    @inlinable
+    public static func deinitialise(_ arrayData: Self.Buffer, count: Int) {
+        A.deinitialise(arrayData.0, count: count)
+        B.deinitialise(arrayData.1, count: count)
+    }
+
+    @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func readArrayData(_ arrayData: Self.Buffer, index: Int) -> Self {
+    public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         .init(
-            A.readArrayData(arrayData.0, index: index),
-            B.readArrayData(arrayData.1, index: index)
+            A.read(arrayData.0, at: index),
+            B.read(arrayData.1, at: index)
         )
     }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func writeArrayData(_ arrayData: inout Self.Buffer, index: Int, value: Self) {
-        A.writeArrayData(&arrayData.0, index: index, value: value._0)
-        B.writeArrayData(&arrayData.1, index: index, value: value._1)
+    public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        A.write(arrayData.0, at: index, to: value._0)
+        B.write(arrayData.1, at: index, to: value._1)
     }
 
     @inlinable

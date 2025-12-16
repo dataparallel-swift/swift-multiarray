@@ -270,6 +270,36 @@ struct MultiArrayTests {
             }
         }
     }
+
+    @Test
+    func boxDoesNotLeak() {
+        final class Tracked {
+            nonisolated(unsafe) static var liveCount: Int = 0
+
+            init() { Tracked.liveCount += 1 }
+            deinit { Tracked.liveCount -= 1 }
+        }
+
+        // Make sure ARC actually tears everything down
+        do {
+            // Tracked has copy-on-write semantics, so we should have 4
+            // references to the same object
+            var arr = MultiArray<Box<Tracked>>(repeating: Box(Tracked()), count: 4)
+            #expect(Tracked.liveCount == 1)
+
+            // Overwrite the slots a bunch of times to stress replacement
+            // semantics. Each overwrite should release the old object.
+            for i in 0 ..< 100 {
+                arr[i % 4] = Box(Tracked())
+            }
+
+            // We should now have exactly 4 copies
+            #expect(Tracked.liveCount == 4)
+        }
+
+        // Leaving the do scope should drop arr and release everything it owns
+        #expect(Tracked.liveCount == 0)
+    }
 }
 
 func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations: Int = 1000)
