@@ -34,6 +34,18 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]
         ),
+        .executableTarget(
+            name: "Issue7",
+            dependencies: [
+                "MultiArray",
+            ],
+            swiftSettings: [
+                .unsafeFlags([
+                    "-O",
+                    "-emit-ir"
+                ])
+            ]
+        ),
         .testTarget(
             name: "MultiArrayTests",
             dependencies: [
