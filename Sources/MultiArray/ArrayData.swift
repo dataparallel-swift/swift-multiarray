@@ -267,6 +267,13 @@ internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int 
 internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
     let end = begin + count * MemoryLayout<T>.stride
+    let pad = begin - context
+
+    // Initialise any gaps between the struct-of-array chunks
+    if pad > 0 {
+        context.initializeMemory(as: UInt8.self, repeating: 0x00, count: pad)
+    }
+
     context = end
     return begin.bindMemory(to: type, capacity: count)
 }
