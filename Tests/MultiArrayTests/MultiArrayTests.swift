@@ -227,6 +227,8 @@ struct MultiArrayTests {
             struct StructTests {
                 @Test func testCodablePoint() throws { try roundtripCodableTest(Point.self) }
                 @Test func testCodableZone() throws { try roundtripCodableTest(Zone.self) }
+                @Test func testCodableUUID() throws { try roundtripCodableTest(UUID.self) }
+                @Test func testCodableDate() throws { try roundtripCodableTest(Date.self) }
             }
 
             @Suite
