@@ -103,7 +103,7 @@ public extension BinaryFloatingPoint {
     typealias RawRepresentation = Self
 }
 
-public extension SIMD {
+public extension SIMD where Scalar: Generic {
     typealias RawRepresentation = Self
 }
 

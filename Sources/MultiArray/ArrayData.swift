@@ -90,13 +90,13 @@ extension Float16: ArrayData {}
 extension Float32: ArrayData {}
 extension Float64: ArrayData {}
 
-extension SIMD2: ArrayData {}
-extension SIMD3: ArrayData {}
-extension SIMD4: ArrayData {}
-extension SIMD8: ArrayData {}
-extension SIMD16: ArrayData {}
-extension SIMD32: ArrayData {}
-extension SIMD64: ArrayData {}
+extension SIMD2: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD3: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD4: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD8: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD16: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD32: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD64: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 
 public extension FixedWidthInteger {
     typealias Buffer = UnsafeMutablePointer<Self>
