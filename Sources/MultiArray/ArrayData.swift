@@ -69,14 +69,12 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
 }
 
 // Primal types
-extension Int: ArrayData {}
 extension Int8: ArrayData {}
 extension Int16: ArrayData {}
 extension Int32: ArrayData {}
 extension Int64: ArrayData {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: ArrayData {}
-extension UInt: ArrayData {}
 extension UInt8: ArrayData {}
 extension UInt16: ArrayData {}
 extension UInt32: ArrayData {}
