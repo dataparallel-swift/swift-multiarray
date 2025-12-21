@@ -51,15 +51,13 @@ extension Generic where RawRepresentation == Self {
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 
-// Primal types
-extension Int: Generic {}
+// Primal, fixed size types
 extension Int8: Generic {}
 extension Int16: Generic {}
 extension Int32: Generic {}
 extension Int64: Generic {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: Generic {}
-extension UInt: Generic {}
 extension UInt8: Generic {}
 extension UInt16: Generic {}
 extension UInt32: Generic {}
@@ -80,6 +78,47 @@ extension SIMD8: Generic {}
 extension SIMD16: Generic {}
 extension SIMD32: Generic {}
 extension SIMD64: Generic {}
+
+// Primal, platform dependent sized types
+extension Int: Generic {
+    #if arch(x86_64) || arch(arm64)
+    public typealias RawRepresentation = Int64
+    #else
+    public typealias RawRepresentation = Int32
+    #endif
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: RawRepresentation { RawRepresentation(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<Int>.size == MemoryLayout<RawRepresentation>.size)
+        assert(MemoryLayout<Int>.stride == MemoryLayout<RawRepresentation>.stride)
+        self = Int(rep)
+    }
+}
+
+extension UInt: Generic {
+    #if arch(x86_64) || arch(arm64)
+    public typealias RawRepresentation = UInt64
+    #else
+    public typealias RawRepresentation = UInt32
+    #endif
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: RawRepresentation { RawRepresentation(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<UInt>.size == MemoryLayout<RawRepresentation>.size)
+        assert(MemoryLayout<UInt>.stride == MemoryLayout<RawRepresentation>.stride)
+        self = UInt(rep)
+    }
+}
 
 extension Bool: Generic {
     public typealias RawRepresentation = UInt8
