@@ -18,8 +18,8 @@
 public protocol ArrayData {
     associatedtype Buffer
 
-    static func initialise(_ arrayData: Buffer, at: Int, to value: Self)
-    static func deinitialise(_ arrayData: Buffer, count: Int)
+    static func initialize(_ arrayData: Buffer, at: Int, to value: Self)
+    static func deinitialize(_ arrayData: Buffer, count: Int)
 
     static func read(_ arrayData: Buffer, at index: Int) -> Self
     static func write(_ arrayData: Buffer, at index: Int, to value: Self)
@@ -32,12 +32,12 @@ public protocol ArrayData {
 // references (i.e. machine types)
 extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     @inlinable
-    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+    public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         (arrayData + index).initialize(to: value)
     }
 
     @inlinable
-    public static func deinitialise(_: Self.Buffer, count _: Int) { /* no-op */ }
+    public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
     // @inline(__always)
@@ -115,10 +115,10 @@ extension Unit: ArrayData {
     public typealias Buffer = Void
 
     @inlinable
-    public static func initialise(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
+    public static func initialize(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
 
     @inlinable
-    public static func deinitialise(_: Self.Buffer, count _: Int) { /* no-op */ }
+    public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
     // @inline(__always)
@@ -148,12 +148,12 @@ extension Box: ArrayData {
     public typealias Buffer = UnsafeMutablePointer<Element>
 
     @inlinable
-    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+    public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         (arrayData + index).initialize(to: value.unbox)
     }
 
     @inlinable
-    public static func deinitialise(_ arrayData: Self.Buffer, count: Int) {
+    public static func deinitialize(_ arrayData: Self.Buffer, count: Int) {
         arrayData.deinitialize(count: count)
     }
 
@@ -194,15 +194,15 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public typealias Buffer = (A.Buffer, B.Buffer)
 
     @inlinable
-    public static func initialise(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
-        A.initialise(arrayData.0, at: index, to: value._0)
-        B.initialise(arrayData.1, at: index, to: value._1)
+    public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
+        A.initialize(arrayData.0, at: index, to: value._0)
+        B.initialize(arrayData.1, at: index, to: value._1)
     }
 
     @inlinable
-    public static func deinitialise(_ arrayData: Self.Buffer, count: Int) {
-        A.deinitialise(arrayData.0, count: count)
-        B.deinitialise(arrayData.1, count: count)
+    public static func deinitialize(_ arrayData: Self.Buffer, count: Int) {
+        A.deinitialize(arrayData.0, count: count)
+        B.deinitialize(arrayData.1, count: count)
     }
 
     @inlinable
