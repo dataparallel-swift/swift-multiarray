@@ -34,10 +34,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inlinable
     public init(count: Int, with generator: (Int) throws -> Element) rethrows {
-        try self.init(unsafeUninitialisedCapacity: count) { buffer in
+        try self.init(unsafeUninitializedCapacity: count) { buffer in
             for i in 0 ..< count {
                 let value = try generator(i)
-                buffer.initialiseElement(at: i, to: value)
+                buffer.initializeElement(at: i, to: value)
             }
         }
     }
@@ -46,10 +46,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inlinable
     public init<E: Error>(count: Int, with generator: (Int) throws(E) -> Element) throws(E) {
-        try self.init(unsafeUninitialisedCapacity: count) { buffer throws(E) in
+        try self.init(unsafeUninitializedCapacity: count) { buffer throws(E) in
             for i in 0 ..< count {
                 let value = try generator(i)
-                buffer.initialiseElement(at: i, to: value)
+                buffer.initializeElement(at: i, to: value)
             }
         }
     }
@@ -83,19 +83,19 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// closure with a buffer covering the array's uninitialized memory.
     @inlinable
     public init<E: Error>(
-        unsafeUninitialisedCapacity count: Int,
-        initialisingWith: (inout UninitialisedMultiArrayData<Element>) throws(E) -> Void
+        unsafeUninitializedCapacity count: Int,
+        initializingWith: (inout UninitializedMultiArrayData<Element>) throws(E) -> Void
     ) throws(E) {
         precondition(count >= 0)
-        self.arrayData = .init(unsafeUninitialisedCapacity: count)
-        var buffer = UninitialisedMultiArrayData<Element>(arrayData.storage)
-        try initialisingWith(&buffer)
+        self.arrayData = .init(unsafeUninitializedCapacity: count)
+        var buffer = UninitializedMultiArrayData<Element>(arrayData.storage)
+        try initializingWith(&buffer)
     }
 }
 
 // Wrapper so that we can expose the buffer using the surface Element type,
 // rather than the underlying RawRepresentation type.
-public struct UninitialisedMultiArrayData<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
+public struct UninitializedMultiArrayData<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     let storage: Element.RawRepresentation.Buffer
 
@@ -106,8 +106,8 @@ public struct UninitialisedMultiArrayData<Element> where Element: Generic, Eleme
 
     /// Initialises the element at the given `index` to the given `value`
     @inlinable
-    public func initialiseElement(at index: Int, to value: consuming Element) {
-        Element.RawRepresentation.initialise(self.storage, at: index, to: value.rawRepresentation)
+    public func initializeElement(at index: Int, to value: consuming Element) {
+        Element.RawRepresentation.initialize(self.storage, at: index, to: value.rawRepresentation)
     }
 }
 
@@ -130,7 +130,7 @@ internal final class MultiArrayData<A: ArrayData> {
     let storage: A.Buffer
 
     @inlinable
-    init(unsafeUninitialisedCapacity count: Int) {
+    init(unsafeUninitializedCapacity count: Int) {
         var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
         self.count = count
         self.context = context
@@ -149,7 +149,7 @@ internal final class MultiArrayData<A: ArrayData> {
     }
 
     deinit {
-        A.deinitialise(self.storage, count: self.count)
+        A.deinitialize(self.storage, count: self.count)
         self.context.deallocate()
     }
 }
