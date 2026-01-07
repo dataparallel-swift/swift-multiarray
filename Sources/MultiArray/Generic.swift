@@ -51,15 +51,13 @@ extension Generic where RawRepresentation == Self {
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 
-// Primal types
-extension Int: Generic {}
+// Primal, fixed size types
 extension Int8: Generic {}
 extension Int16: Generic {}
 extension Int32: Generic {}
 extension Int64: Generic {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: Generic {}
-extension UInt: Generic {}
 extension UInt8: Generic {}
 extension UInt16: Generic {}
 extension UInt32: Generic {}
@@ -80,6 +78,69 @@ extension SIMD8: Generic {}
 extension SIMD16: Generic {}
 extension SIMD32: Generic {}
 extension SIMD64: Generic {}
+
+// Primal, platform dependent sized types
+#if arch(x86_64) || arch(arm64)
+extension Int: Generic {
+    public typealias RawRepresentation = Int64
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: Int64 { Int64(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<Int>.size == 8)
+        self = Int(rep)
+    }
+}
+
+extension UInt: Generic {
+    public typealias RawRepresentation = UInt64
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: UInt64 { UInt64(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<UInt>.size == 8)
+        self = UInt(rep)
+    }
+}
+#else
+extension Int: Generic {
+    public typealias RawRepresentation = Int32
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: Int32 { Int32(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<Int>.size == 4)
+        self = Int(rep)
+    }
+}
+
+extension UInt: Generic {
+    public typealias RawRepresentation = UInt32
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: UInt32 { UInt32(self) }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        assert(MemoryLayout<UInt>.size == 4)
+        self = UInt(rep)
+    }
+}
+#endif
 
 extension Bool: Generic {
     public typealias RawRepresentation = UInt8
@@ -103,7 +164,7 @@ public extension BinaryFloatingPoint {
     typealias RawRepresentation = Self
 }
 
-public extension SIMD {
+public extension SIMD where Scalar: Generic {
     typealias RawRepresentation = Self
 }
 

@@ -15,12 +15,12 @@
 import MultiArray
 
 struct Zone: Generic, Equatable, Randomizable, Codable {
-    typealias RawRepresentation = T2<Int, Vec3<Float>>.RawRepresentation
+    typealias RawRepresentation = T2<Int8, Vec3<Float>>.RawRepresentation
 
-    let id: Int
+    let id: Int8
     let position: Vec3<Float>
 
-    init(id: Int, position: Vec3<Float>) {
+    init(id: Int8, position: Vec3<Float>) {
         self.id = id
         self.position = position
     }
@@ -39,7 +39,7 @@ struct Zone: Generic, Equatable, Randomizable, Codable {
 
     static func random<T: RandomNumberGenerator>(using generator: inout T) -> Self {
         Zone(
-            id: Int.random(using: &generator),
+            id: Int8.random(using: &generator),
             position: Vec3<Float>.random(using: &generator)
         )
     }
