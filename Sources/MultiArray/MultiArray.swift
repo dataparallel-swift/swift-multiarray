@@ -33,18 +33,6 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// Create a new MultiArray by applying the given function to each index to
     /// produce each value.
     @inlinable
-    public init(count: Int, with generator: (Int) throws -> Element) rethrows {
-        try self.init(unsafeUninitializedCapacity: count) { buffer in
-            for i in 0 ..< count {
-                let value = try generator(i)
-                buffer.initializeElement(at: i, to: value)
-            }
-        }
-    }
-
-    /// Create a new MultiArray by applying the given function to each index to
-    /// produce each value.
-    @inlinable
     public init<E: Error>(count: Int, with generator: (Int) throws(E) -> Element) throws(E) {
         try self.init(unsafeUninitializedCapacity: count) { buffer throws(E) in
             for i in 0 ..< count {
