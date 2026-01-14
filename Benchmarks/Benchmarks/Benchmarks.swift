@@ -160,7 +160,7 @@ struct Zone: Randomizable & Generic {
 
     @inlinable
     init(from rep: RawRepresentation) {
-        self.id = rep._0
+        self.id = Int(from: rep._0)
         self.position = Vec3<Float>(from: rep._1)
     }
 }

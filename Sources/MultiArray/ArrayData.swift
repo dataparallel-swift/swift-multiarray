@@ -69,14 +69,12 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
 }
 
 // Primal types
-extension Int: ArrayData {}
 extension Int8: ArrayData {}
 extension Int16: ArrayData {}
 extension Int32: ArrayData {}
 extension Int64: ArrayData {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
 extension Int128: ArrayData {}
-extension UInt: ArrayData {}
 extension UInt8: ArrayData {}
 extension UInt16: ArrayData {}
 extension UInt32: ArrayData {}
@@ -90,13 +88,13 @@ extension Float16: ArrayData {}
 extension Float32: ArrayData {}
 extension Float64: ArrayData {}
 
-extension SIMD2: ArrayData {}
-extension SIMD3: ArrayData {}
-extension SIMD4: ArrayData {}
-extension SIMD8: ArrayData {}
-extension SIMD16: ArrayData {}
-extension SIMD32: ArrayData {}
-extension SIMD64: ArrayData {}
+extension SIMD2: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD3: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD4: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD8: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD16: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD32: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD64: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 
 public extension FixedWidthInteger {
     typealias Buffer = UnsafeMutablePointer<Self>
@@ -269,6 +267,13 @@ internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int 
 internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
     let end = begin + count * MemoryLayout<T>.stride
+    let pad = begin - context
+
+    // Initialise any gaps between the struct-of-array chunks
+    if pad > 0 {
+        context.initializeMemory(as: UInt8.self, repeating: 0x00, count: pad)
+    }
+
     context = end
     return begin.bindMemory(to: type, capacity: count)
 }
