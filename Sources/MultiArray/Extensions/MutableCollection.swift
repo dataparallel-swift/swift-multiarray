@@ -20,6 +20,7 @@ extension MultiArray: MutableCollection {
             Element(from: self.arrayData[index])
         }
         set(value) {
+            self._prepareForMutation()
             self.arrayData[index] = value.rawRepresentation
         }
     }
