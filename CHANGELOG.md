@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Architecture documentation
 - Developer scripts for Linux and macOS builds, tests, formatting, and preflight checks
+- `Generic` witnesses and structurally validated storage for `RawRepresentable` types
 
 ### Changed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Avoid force-unwrapping unavailable `Data` storage during binary decoding
+- Reject out-of-domain `RawRepresentable` values during binary decoding
 - Preserve `MultiArray` value semantics by copying shared storage before indexed mutation
 
 ## [2.1.0] - 2025-12-16
