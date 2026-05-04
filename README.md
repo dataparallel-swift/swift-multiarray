@@ -14,6 +14,24 @@ non-recursive product types over primitive values. Sum types could be
 supported as well, but we'll defer that until we have good uses cases to
 properly explore that space (see comments in the code).
 
+Raw-value types can use `RawValueRepresentation` to retain their value-domain
+constraint while storing only the underlying scalar:
+
+```swift
+enum Status: UInt8 {
+    case off = 0
+    case on = 1
+}
+
+extension Status: Generic {
+    typealias RawRepresentation = RawValueRepresentation<Self>
+}
+```
+
+Binary snapshots continue to encode only the `UInt8` representation tag. Raw
+values are validated as `Status` during decoding, including when the value is a
+field nested inside a product representation.
+
 Consider the following datatype:
 
 ```swift
@@ -210,4 +228,3 @@ performance improvement (which is not bad for a simple memory bound operation).
 * Support for sum datatypes (i.e. enums). There are different ways this could be
   achieved, and the best choice may depend on the individual application, so
   punting this until we have a real use case for it.
-
