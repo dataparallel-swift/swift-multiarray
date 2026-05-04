@@ -81,6 +81,10 @@ storage; copy-on-write has not yet been implemented. Mutating one of two copied
 `init(unsafeUninitializedCapacity:initializingWith:)` supports bulk construction
 by handing its closure an `UninitializedMultiArrayData<Element>` view over the
 raw storage, typed in terms of the surface `Element` rather than its
-`RawRepresentation`. The closure must initialize every element before returning.
-The current buffer view does not track how many elements were initialized, so
-returning or throwing after partial initialization is not safe.
+`RawRepresentation`. The closure initializes a prefix of that storage and
+reports its length through an `inout` count. It must report the initialized
+prefix even when it throws, normally with `defer`; `MultiArrayData.deinit` uses
+that count to destroy exactly the initialized elements. Reporting too few
+elements leaks their resources. The reported count is checked against
+`0...capacity`, and a count outside that range traps, including when the closure
+throws.

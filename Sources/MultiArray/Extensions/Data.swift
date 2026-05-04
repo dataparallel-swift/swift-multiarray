@@ -137,21 +137,22 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         }
 
         // Header verification is complete.
-        // Allocate the buffer for the payload and memcpy dirctly into it.
-        self.arrayData = .init(unsafeUninitializedCapacity: count)
-        data.withUnsafeBytes {
-            // This force unwrap is safe because we've already accessed the
-            // underlying Data pointer many times before this point, so it can
-            // not possibly be nil.
-            // swiftlint:disable:next force_unwrapping
-            self.arrayData.context.copyMemory(from: $0.baseAddress! + offset, byteCount: expectedByteCount)
+        // Allocate the buffer for the payload and memcpy directly into it.
+        self.arrayData = MultiArrayData<Element.RawRepresentation>(unsafeUninitializedCapacity: count)
+        try data.withUnsafeBytes { ptr in
+            guard let addr = ptr.baseAddress else {
+                throw BinaryMultiArrayError.storageUnavailable
+            }
+            self.arrayData.context.copyMemory(from: addr + offset, byteCount: expectedByteCount)
         }
+        self.arrayData.count = count
     }
 }
 
 public enum BinaryMultiArrayError: Error, Equatable, CustomStringConvertible {
     case badMagic
     case endianMismatch
+    case storageUnavailable
     case overflow(UInt64)
     case unsupportedVersion(Int)
     case truncated(index: Int, required: Int, total: Int)
@@ -165,6 +166,8 @@ public enum BinaryMultiArrayError: Error, Equatable, CustomStringConvertible {
                 "Incorrect magic value. Are you sure this is MultiArray data?"
             case .endianMismatch:
                 "Attempt to load data that was produced on a machine of different endian-ness. This is not supported."
+            case .storageUnavailable:
+                "Unable to access the encoded Data's underlying storage."
             case let .overflow(value):
                 "Encoded value overflowed available Int range: \(value)"
             case let .unsupportedVersion(version):
