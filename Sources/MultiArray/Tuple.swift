@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// swiftlint:disable identifier_name
+// swiftlint:disable file_length
 
 public struct T2<A, B> {
     public let _0: A
@@ -897,3 +897,5 @@ extension T16: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
         )
     }
 }
+
+// swiftlint:enable file_length

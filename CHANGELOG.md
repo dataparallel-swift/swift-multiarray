@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Architecture documentation
 
+### Changed
+
+- Update the project's lint and formatting rules
+
 ## [2.1.0] - 2025-12-16
 
 ### Added
