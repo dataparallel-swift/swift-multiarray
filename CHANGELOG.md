@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support SwiftSyntax releases from 600 through 603
 - Reorganize the test suite and expand coverage for empty arrays, Boolean fields, and large arrays
 - **Breaking:** Change `init(unsafeUninitializedCapacity:initializingWith:)` to report the number of initialized elements, preventing undefined behaviour and leaks when initialization throws
+- Improve `init(repeating:count:)` by decomposing the repeated value only once
 
 ### Fixed
 

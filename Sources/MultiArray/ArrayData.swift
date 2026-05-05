@@ -26,6 +26,7 @@ public protocol ArrayData {
     /// from initialized, nonoverlapping source storage. Implementations must
     /// preserve value ownership, including retaining reference-valued fields.
     static func initialize(_ arrayData: Buffer, from: Buffer, count: Int)
+    static func initialize(_ arrayData: Buffer, repeating: Self, count: Int)
     static func deinitialize(_ arrayData: Buffer, count: Int)
 
     static func read(_ arrayData: Buffer, at index: Int) -> Self
@@ -54,6 +55,11 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
         //
         // > destination.initialize(from: source, count: count)
         memcpy(destination, source, count * MemoryLayout<Self>.stride)
+    }
+
+    @inlinable
+    public static func initialize(_ arrayData: Self.Buffer, repeating value: Self, count: Int) {
+        arrayData.initialize(repeating: value, count: count)
     }
 
     @inlinable
@@ -139,6 +145,9 @@ extension Unit: ArrayData {
     public static func initialize(_: Self.Buffer, from _: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
+    public static func initialize(_: Self.Buffer, repeating _: Self, count _: Int) { /* no-op */ }
+
+    @inlinable
     public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
@@ -176,6 +185,11 @@ extension Box: ArrayData {
     @inlinable
     public static func initialize(_ arrayData: Self.Buffer, from source: Self.Buffer, count: Int) {
         arrayData.initialize(from: source, count: count)
+    }
+
+    @inlinable
+    public static func initialize(_ arrayData: Self.Buffer, repeating value: Self, count: Int) {
+        arrayData.initialize(repeating: value.unbox, count: count)
     }
 
     @inlinable
@@ -229,6 +243,12 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public static func initialize(_ arrayData: Self.Buffer, from source: Self.Buffer, count: Int) {
         A.initialize(arrayData.0, from: source.0, count: count)
         B.initialize(arrayData.1, from: source.1, count: count)
+    }
+
+    @inlinable
+    public static func initialize(_ arrayData: Self.Buffer, repeating value: Self, count: Int) {
+        A.initialize(arrayData.0, repeating: value._0, count: count)
+        B.initialize(arrayData.1, repeating: value._1, count: count)
     }
 
     @inlinable
