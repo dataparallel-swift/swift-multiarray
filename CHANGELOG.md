@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Make `ArrayData.rawSize(capacity:from:)` return an optional checked size
 - **Breaking:** Binary snapshot encoding advances to version 2, rejecting version-1 snapshots; nested-product snapshots no longer contain unused opaque-struct padding
 - **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
+- Improve `init(repeating:count:)` by decomposing the repeated value only once
 
 ### Fixed
 
