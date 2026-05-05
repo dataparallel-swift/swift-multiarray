@@ -77,6 +77,16 @@ let benchmarks: @Sendable () -> Void = {
             },
             setup: { MultiArray(setup(size: size)) }
         )
+        Benchmark(
+            "multiarray/repeating/\(size)",
+            configuration: .init(scalingFactor: scaling),
+            closure: { _, input in
+                blackHole(MultiArray(repeating: input, count: size))
+            },
+            setup: {
+                Zone(id: 42, position: Vec3(x: 1, y: 2, z: 3))
+            }
+        )
     }
 
     func setup(size: Int) -> Array<Zone> {
