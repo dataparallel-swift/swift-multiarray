@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Architecture documentation
+- Developer scripts for Linux and macOS builds, tests, formatting, and preflight checks
 
 ### Changed
 
