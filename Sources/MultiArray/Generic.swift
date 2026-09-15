@@ -94,8 +94,6 @@ extension Int: Generic {
     @inlinable
     @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
-        assert(MemoryLayout<Int>.size == MemoryLayout<RawRepresentation>.size)
-        assert(MemoryLayout<Int>.stride == MemoryLayout<RawRepresentation>.stride)
         self = Int(rep)
     }
 }
@@ -114,8 +112,6 @@ extension UInt: Generic {
     @inlinable
     @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
-        assert(MemoryLayout<UInt>.size == MemoryLayout<RawRepresentation>.size)
-        assert(MemoryLayout<UInt>.stride == MemoryLayout<RawRepresentation>.stride)
         self = UInt(rep)
     }
 }
