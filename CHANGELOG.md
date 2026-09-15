@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Nested-product binary snapshots no longer contain unused opaque-struct padding
 - **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
 - Improve `init(repeating:count:)` by decomposing the repeated value only once
+- Remove redundant per-element platform integer layout assertions
 
 ### Fixed
 
