@@ -14,6 +14,48 @@
 
 import Foundation
 
+/// A storage representation that preserves the domain constraint of a
+/// `RawRepresentable` type while storing its raw value's `Generic` representation.
+/// Storage requires `Value.RawValue: Generic` and an `ArrayData` representation;
+/// binary snapshots additionally require that representation to be `BinaryArrayData`.
+///
+/// This allows binary validation to distinguish a constrained raw-value field
+/// from an unconstrained scalar without encoding surface-type information.
+/// Use it as the representation of a raw-value type to obtain the default
+/// `Generic` witnesses:
+///
+/// ```swift
+/// extension Status: Generic {
+///     typealias RawRepresentation = RawValueRepresentation<Self>
+/// }
+/// ```
+public struct RawValueRepresentation<Value: RawRepresentable> {
+    @usableFromInline
+    internal let rawValue: Value.RawValue
+
+    @inlinable
+    internal init(unchecked rawValue: Value.RawValue) {
+        self.rawValue = rawValue
+    }
+}
+
+extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRepresentation<Self> {
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: RawRepresentation {
+        RawValueRepresentation(unchecked: self.rawValue)
+    }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        guard let value = Self(rawValue: rep.rawValue) else {
+            preconditionFailure("Invalid raw value for \(Self.self): \(rep.rawValue)")
+        }
+        self = value
+    }
+}
+
 // Store the raw value's representation; the Value parameter preserves the domain
 // constraint for validation without changing the physical layout.
 extension RawValueRepresentation: ArrayData where Value.RawValue: Generic, Value.RawValue.RawRepresentation: ArrayData {
