@@ -88,6 +88,15 @@ extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRep
     }
 }
 
+/// Derives `Generic` for a struct.
+///
+/// Stored properties must have explicit type annotations. For generic structs,
+/// put the `Generic` constraints on the struct declaration itself. The complete
+/// conformance is emitted in an extension so the struct retains its synthesized
+/// memberwise initializer. Public conversion witnesses are `@inlinable` only
+/// when every encoded field is public or usable from inline code. A nested type
+/// cannot be `private` because its generated conformance extension is
+/// file-scoped; use `fileprivate` instead.
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 
@@ -186,7 +195,7 @@ public extension SIMD where Scalar: Generic {
 public struct Unit {
     @inlinable
     @_alwaysEmitIntoClient
-    init() {}
+    public init() {}
 }
 
 extension Unit: Generic {
@@ -207,6 +216,10 @@ public struct Box<Element> {
 
 extension Box: Generic {
     public typealias RawRepresentation = Self
+}
+
+extension Box: Equatable where Element: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool { lhs.unbox == rhs.unbox }
 }
 
 // Products: encode multiple arguments to constructors
