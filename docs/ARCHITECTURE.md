@@ -61,8 +61,9 @@ Protocol witnesses for a file-scope private type must themselves be
 `fileprivate`. A private nested type cannot be named by the generated file-scope
 extension, so `@Generic` diagnoses it and requires `fileprivate` access.
 
-The `T2`–`T16` tuple helpers in `Tuple.swift` are conveniences for hand-written
-conformances. `Product` can be nested directly when another shape is preferable.
+The `T2`–`T16` tuple helpers in `Support/Tuple.swift` are conveniences for
+hand-written conformances. `Product` can be nested directly when another shape
+is preferable.
 
 ## The `ArrayData` Protocol
 
