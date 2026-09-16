@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture documentation
 - Developer scripts for Linux and macOS builds, tests, formatting, and preflight checks
 - `Generic` witnesses and structurally validated storage for `RawRepresentable` types
+- `@Generic` derivation for structs: balanced tree representation with no property count limit, preserved memberwise initializers, and non-public encoded fields; stored properties without an explicit type annotation and private nested types are diagnosed
+- `Box: Equatable` conformance
 
 ### Changed
 
