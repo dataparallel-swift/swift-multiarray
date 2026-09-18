@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject out-of-domain `RawRepresentable` values during binary decoding
 - Preserve `MultiArray` value semantics by copying shared storage before indexed mutation
 - Remove unstable raw storage addresses from `MultiArray.debugDescription`
+- Restore automatic vectorization of `MultiArray.map` with Swift 6.2 and later
 
 ## [2.1.0] - 2025-12-16
 
