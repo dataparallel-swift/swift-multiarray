@@ -114,12 +114,19 @@ extension Float16: ArrayData {}
 extension Float32: ArrayData {}
 extension Float64: ArrayData {}
 
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD2: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD3: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD4: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD8: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD16: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD32: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+/// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD64: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 
 public extension FixedWidthInteger {

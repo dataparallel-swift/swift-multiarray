@@ -28,12 +28,38 @@ to and from that representation. Users can conform their own types by hand.
 The module also ships conformances for `Date` (via `TimeInterval`) and `UUID`
 (via `SIMD16<UInt8>`).
 
-### Macro scaffold
+### Macro derivation
 
-For structs, the `@Generic` macro derives the representation and conversion
-witnesses in a conformance extension. For raw-value enums without associated
-values, it derives a `RawValueRepresentation<Self>` typealias; the shared
-`RawRepresentable` extension supplies the conversion witnesses and validation.
+For structs, the `@Generic` macro derives `RawRepresentation`,
+`rawRepresentation`, and `init(from:)` together in a conformance extension, so
+the original declaration retains Swift's synthesized memberwise initializer.
+It maps stored, explicitly typed properties into a balanced `Product` tree,
+uses `Unit` for an empty struct, and ignores static and computed properties. A
+generic struct states its `Generic` constraints on the declaration itself; the
+generated extension uses those constraints without repeating its `where`
+clause. Swift 6.3 accepts this complete extension-only conformance without the
+historical circular-reference diagnostic.
+
+For raw-value enums without associated values, `@Generic` derives a
+`RawValueRepresentation<Self>` typealias and adds the same conformance. The
+shared `RawRepresentable` protocol extension supplies the conversion witnesses,
+so macro-derived and hand-written conformances have identical validation.
+
+The `@Box` property macro turns a mutable, non-`Generic` field into transparent
+get/set accessors backed by `Box<T>`. It preserves a property initializer on the
+generated backing field. Swift does not allow accessor macros on `let`
+declarations, so immutable values must use `Box<T>` explicitly. Hand-written
+`RawValueRepresentation<Self>` conformances remain useful for retroactively
+conforming raw-value types declared in other modules.
+
+Macro-generated witnesses and accessors use `@inlinable` where their referenced
+storage permits it. Public conversion witnesses retain the attribute only when
+every encoded field is public or `@usableFromInline`; the backing storage
+generated for a public `@Box` property satisfies that requirement. Private and
+fileprivate witnesses omit the attribute because Swift does not permit it.
+Protocol witnesses for a file-scope private type must themselves be
+`fileprivate`. A private nested type cannot be named by the generated file-scope
+extension, so `@Generic` diagnoses it and requires `fileprivate` access.
 
 The `T2`–`T16` tuple helpers in `Tuple.swift` are conveniences for hand-written
 conformances. `Product` can be nested directly when another shape is preferable.

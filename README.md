@@ -6,121 +6,172 @@
 An array that stores elements in unboxed struct-of-array style. This can provide
 better data locality and enable efficient (automatic) vectorization.
 
-## Example
+## The `@Generic` Macro
 
 In order to store values in unboxed struct-of-array style, array elements must
-be members of the included `Generic` protocol. This currently supports regular
-non-recursive product types over primitive values. Sum types could be
-supported as well, but we'll defer that until we have good uses cases to
-properly explore that space (see comments in the code).
+conform to the `Generic` protocol. This protocol decomposes a struct into a tree
+of `Product<A, B>` pairs that eventually resolve to scalar primitives (`Int8`–`Int128`,
+`UInt8`–`UInt128`, `Float16`/`Float32`/`Float64`, `Bool`, `SIMD<N>`).
 
-Raw-value types can use `RawValueRepresentation` to retain their value-domain
-constraint while storing only the underlying scalar:
+Rather than writing the decomposition by hand, use the `@Generic` macro:
 
 ```swift
+@Generic
+struct Point {
+    var x: Double
+    var y: Double
+}
+```
+
+The macro emits the complete conformance in an extension, preserving Swift's
+synthesized memberwise initializer. For this 2-field struct it generates:
+
+```swift
+extension Point: Generic {
+    typealias RawRepresentation = Product<Double.RawRepresentation, Double.RawRepresentation>
+
+    @inlinable
+    var rawRepresentation: RawRepresentation {
+        Product(self.x.rawRepresentation, self.y.rawRepresentation)
+    }
+
+    @inlinable
+    init(from rep: RawRepresentation) {
+        self.x = Double(from: rep._0)
+        self.y = Double(from: rep._1)
+    }
+}
+```
+
+For structs with more fields, the macro builds a balanced binary tree of nested
+`Product` values. The `T2`, `T3`, ... `T16` helpers still exist for hand-written
+conformances.
+
+### More examples
+
+**Three fields:**
+
+```swift
+@Generic
+struct Vec3<Element> where Element: Generic {
+    let x, y, z: Element
+}
+```
+
+**Nested `Generic` types:**
+
+```swift
+@Generic
+struct Zone {
+    let id: Int8
+    let position: Vec3<Float>
+}
+```
+
+**Non-`Generic` fields (e.g. `String`):**
+
+Wrap them in `Box<T>` manually, or use the `@Box` property macro:
+
+```swift
+@Generic
+struct Labeled {
+    // Manual Box wrapping
+    let label: Box<String>
+    let value: Float
+}
+
+@Generic
+struct LabeledWithMacro {
+    // @Box adds a backing _name: Box<T> and transparent get/set accessors
+    @Box var label: String
+    let value: Float
+
+    // You must update any initialisers to refer to the backing store
+    init(label: String, value: Float) {
+        self._label = Box(label)
+        self.value = value
+    }
+}
+```
+
+Note that Swift does not allow `@attached(accessor)` macros on `let`
+declarations, so the macro can not be applied to any immutable fields you wish
+to box.
+
+**Computed properties are excluded:**
+
+```swift
+@Generic
+struct Vec2 {
+    var x: Float
+    var y: Float
+    var magnitude: Float { (x * x + y * y).squareRoot() } // excluded
+}
+```
+
+Every stored property must have an explicit type annotation; `@Generic`
+diagnoses inferred stored properties rather than silently omitting them.
+Computed properties (getter-only or get/set) are skipped. Properties with
+`willSet`/`didSet` observers are treated as stored properties and included.
+Public structs may keep encoded fields internal or private; the generated
+conversion witnesses omit `@inlinable` when required by that encapsulation.
+Because the conformance is emitted in a file-scoped extension, a nested type
+annotated with `@Generic` must be at least `fileprivate`, not `private`.
+
+**Property count:** Any number of stored properties is supported. Zero-field
+structs use `Unit` (the zero-byte base case).
+
+### Raw-value enums
+
+Apply `@Generic` to a raw-value enum to retain its value-domain constraint while
+storing only the underlying scalar:
+
+```swift
+@Generic
 enum Status: UInt8 {
     case off = 0
     case on = 1
 }
+```
 
+This derives the same conformance that can be written by hand when retroactively
+conforming a type from another module:
+
+```swift
 extension Status: Generic {
     typealias RawRepresentation = RawValueRepresentation<Self>
 }
 ```
 
+Enums with associated values are not supported.
+
+The macro treats the first entry in an enum's inheritance clause as a possible
+raw type because attached macros cannot resolve type names. A protocol-only
+clause such as `enum Status: CaseIterable` therefore proceeds to normal Swift
+semantic checking, which reports that the enum is not `RawRepresentable`.
+
 Binary snapshots continue to encode only the `UInt8` representation tag. Raw
 values are validated as `Status` during decoding, including when the value is a
 field nested inside a product representation.
 
-For enums declared in the current module, the macro derives the same
-conformance:
+### SIMD values
 
-```swift
-@Generic
-enum Status: UInt8 {
-    case off = 0
-    case on = 1
-}
-```
+SIMD values are atomic fields for SoA storage. For example, a
+`MultiArray<SIMD4<Float>>` stores one contiguous buffer of `SIMD4<Float>` values;
+it does not split the four lanes into four `Float` buffers. SIMD vectors already
+provide the intended contiguous, vector-friendly layout.
 
-Enums with associated values are not supported. Because attached macros cannot
-resolve inherited type names, the macro treats the first inheritance entry as a
-possible raw type. A protocol-only clause therefore proceeds to Swift's normal
-semantic checking, which reports that the enum is not `RawRepresentable`.
+As far as the compiler is concerned, the in-memory layout of `Point` and
+`Point.RawRepresentation` are identical -- `Product` is a simple pair type, and
+larger structs are represented as balanced `Product` trees. With sufficient
+inlining, this representation change is a no-op.
 
-Consider the following datatype:
-
-```swift
-@Generic
-struct Vec3<Element> {
-    let x, y, z: Element
-}
-```
-
-The required instance ~is~ will eventually be provided by the `@Generic` macro,
-which generates something like:
-
-```swift
-extension Vec3: Generic where Element: Generic {
-    typealias RawRepresentation = Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>
-    var rawRepresentation: RawRepresentation {
-        Product(self.x.rawRepresentation, Product(self.y.rawRepresentation, self.z.rawRepresentation))
-    }
-    
-    init(from rep: Product<Element.RawRepresentation, Product<Element.RawRepresentation, Element.RawRepresentation>>) {
-        self = .init(
-            x: .init(from: rep._0),
-            y: .init(from: rep._1._0),
-            z: .init(from: rep._1._1)
-        )
-    }
-}
-```
-
-Here `Product` is a simple pair type, because Swift does not allow us to extend
-regular tuples `(,)`. Boo.
-
-For convenience we provide synonyms for tuples from 2 to 16 elements (`T2`,
-`T3`...), so that you  do not have to do the binary nesting yourself.
-
-As you can see, this is a straightforward translation over the structure of the
-datatype into an isomorphic representation using (nested) pairs. As far as the
-compiler is concerned, the in-memory layout of `Vec3<Float>` and
-`Vec3<Float>.RawRepresentation` is identical, so in practice (i.e. with sufficient
-inlining) this representation change should be a no-op.
-
-Similarly, the following works exactly as you would expect:
-
-```swift
-@Generic
-struct Zone {
-    let id: Int
-    let position: Vec3<Float>
-}
-
-// Generates...
-extension Zone: Generic {
-    typealias RawRepresentation = Product<Int.RawRepresentation, Vec3<Float>.RawRepresentation>
-    var rawRepresentation: RawRepresentation {
-        Product(self.id.rawRepresentation, self.position.rawRepresentation)
-    }
-    
-    init(from rep: RawRepresentation) {
-        self = Zone(id: rep._0, position: .init(from: rep._1))
-    }
-}
-```
-
-Once the protocol instance is defined, you can use it in the usual way and have
-the compiler automatically transform access to and from the underlying storage
-representation.
-
-For example, suppose we have the following function to move the position of a
-`Zone` by a given x-, y-, and z-offset:
+For example, suppose we have a `move` function that shifts every `Zone` by a
+given offset:
 
 ```swift
 extension Zone {
-    public func move(dx: Float = 0, dy: Float = 0, dz: Float = 0) -> Zone {
+    func move(dx: Float = 0, dy: Float = 0, dz: Float = 0) -> Zone {
         Zone(id: self.id,
              position: Vec3(x: self.position.x + dx,
                             y: self.position.y + dy,
@@ -129,8 +180,8 @@ extension Zone {
 }
 ```
 
-In a regular Swift `Array` the fields of our `Zone` structure will be stored
-contiguously in memory as (on a 64-bit system):
+In a regular Swift `Array` the fields of `Zone` are stored contiguously as
+array-of-structs (on a 64-bit system):
 
 ```
                             1        1        2        2        2        3
@@ -140,41 +191,11 @@ contiguously in memory as (on a 64-bit system):
 +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 ```
 
-Notice that due to alignment restricts, an extra 4 bytes padding must be added
-between each array element, and wasting 16.6% of our available memory bandwidth.
+Due to alignment, 4 bytes of padding per element wastes ~16% of bandwidth. The
+compiler can partially vectorize (pairing `x` and `y` into a `<2 x float>` load)
+but is hamstrung by the interleaved layout.
 
-If we `map` our `move(dx: 1)` function over this array and inspect the
-generated code, we'll see that the core of the loop looks like this (annotated):
-
-```llvm
-10:                                               ; preds = %26, %5
-  %11 = phi i64 [ %.pre, %5 ], [ %23, %26 ]                                 ; array capacity
-  %12 = phi i64 [ 0, %5 ], [ %28, %26 ]                                     ; loop counter
-  %13 = phi ptr [ %6, %5 ], [ %27, %26 ]                                    ; array storage
-  %14 = mul nuw nsw i64 %12, 24                                             ; calculate offset to start of this element
-  %15 = getelementptr inbounds i8, ptr %7, i64 %14                          ; get pointer to this element
-  %16 = load i64, ptr %15, align 1                                          ; load .id
-  %.position = getelementptr inbounds i8, ptr %15, i64 8                    ; get pointer to .x
-  %17 = load <2 x float>, ptr %.position, align 1                           ; load .x and .y
-  %.position.z = getelementptr inbounds i8, ptr %15, i64 16                 ; get pointer to .z
-  %18 = load float, ptr %.position.z, align 1                               ; load .z
-  %19 = fadd <2 x float> %17, <float 1.000000e+00, float 0.000000e+00>      ; compute new .x and .y
-  %20 = fadd float %18, 0.000000e+00                                        ; compute new .z
-  store ptr %13, ptr %1, align 8
-  %._storage3._capacityAndFlags = getelementptr inbounds i8, ptr %13, i64 24
-  %21 = load i64, ptr %._storage3._capacityAndFlags, align 8
-  %22 = lshr i64 %21, 1
-  %23 = add nuw nsw i64 %11, 1
-  %.not = icmp ugt i64 %22, %11
-  br i1 %.not, label %26, label %24, !prof !11
-```
-
-The swift compiler does a good job to turn the individual load of `x` and `y`
-into a single vectorised load, but is otherwise hamstrung by the underlying data
-layout and unable to optimise the code further.
-
-Using `MultiArray`, each of the individual fields of the structure are stored in
-their own individual memory regions:
+With `MultiArray`, each field gets its own contiguous buffer:
 
 ```
 +--------+--------+--------+--------+--------+--------+
@@ -194,52 +215,30 @@ their own individual memory regions:
 +--------+--------+--------+--------+--------+--------+
 ```
 
-And the core loop of the generated code now looks like this:
+The generated loop is now 4-wide vectorized (M4 Max): each field is loaded as
+`<4 x T>`, computed on SIMD vectors, and stored back:
 
 ```llvm
 vector.body:                                      ; preds = %vector.body, %vector.ph
   %index = phi i64 [ 0, %vector.ph ], [ %index.next, %vector.body ]
-  %25 = getelementptr inbounds %TSi, ptr %19, i64 %index
-  %wide.load = load <4 x i64>, ptr %25, align 8, !alias.scope !13
-  %26 = getelementptr inbounds %TSf, ptr %20, i64 %index
-  %wide.load100 = load <4 x float>, ptr %26, align 4, !alias.scope !16
-  %27 = getelementptr inbounds %TSf, ptr %21, i64 %index
-  %wide.load101 = load <4 x float>, ptr %27, align 4, !alias.scope !18
-  %28 = getelementptr inbounds %TSf, ptr %22, i64 %index
-  %wide.load102 = load <4 x float>, ptr %28, align 4, !alias.scope !20
-  %29 = fadd <4 x float> %wide.load100, <float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00>
-  %30 = fadd <4 x float> %wide.load101, zeroinitializer
-  %31 = fadd <4 x float> %wide.load102, zeroinitializer
-  %32 = getelementptr inbounds %TSi, ptr %8, i64 %index
-  store <4 x i64> %wide.load, ptr %32, align 8, !alias.scope !22, !noalias !24
-  %33 = getelementptr inbounds %TSf, ptr %10, i64 %index
-  store <4 x float> %29, ptr %33, align 4, !alias.scope !28, !noalias !29
-  %34 = getelementptr inbounds %TSf, ptr %11, i64 %index
-  store <4 x float> %30, ptr %34, align 4, !alias.scope !30, !noalias !31
-  %35 = getelementptr inbounds %TSf, ptr %12, i64 %index
-  store <4 x float> %31, ptr %35, align 4, !alias.scope !32, !noalias !33
-  %index.next = add nuw i64 %index, 4
-  %36 = icmp eq i64 %index.next, %n.vec
-  br i1 %36, label %middle.block, label %vector.body, !llvm.loop !34
+  %wide.load  = load <4 x i64>,   ptr %id.ptr,   align 8
+  %wide.load1 = load <4 x float>, ptr %x.ptr,    align 4
+  %wide.load2 = load <4 x float>, ptr %y.ptr,    align 4
+  %wide.load3 = load <4 x float>, ptr %z.ptr,    align 4
+  %new.x = fadd <4 x float> %wide.load1, <1.0, 1.0, 1.0, 1.0>
+  %new.y = fadd <4 x float> %wide.load2, zeroinitializer
+  %new.z = fadd <4 x float> %wide.load3, zeroinitializer
+  store <4 x i64>   %wide.load,  ptr %out.id, align 8
+  store <4 x float> %new.x,      ptr %out.x,  align 4
+  store <4 x float> %new.y,      ptr %out.y,  align 4
+  store <4 x float> %new.z,      ptr %out.z,  align 4
 ```
 
-Immediately we can see that this loop has been 4-wide vectorized: each field is
-read 4-elements at a time, and computations are done on 4-wide SIMD vectors (M4
-Max).
-
-(A very observant viewer might also note that this loop branches directly to the
-top of the basic block, compared to the previous version which did not. Indeed
-that version requires a "cleanup" step after each iteration to update the stored
-size of the array and grow its capacity if necessary, but that's out of scope
-for this discussion).
-
-Benchmarking the above shows a 20% reduction in memory usage and (up to) ~ 2x
-performance improvement (which is not bad for a simple memory bound operation).
+This yields ~20% less memory usage and up to ~2x speedup for memory-bound
+operations.
 
 
-## TODO
-
-* Implement `@Generic` macro
+## Future Work
 
 * Support for sum datatypes (i.e. enums). There are different ways this could be
   achieved, and the best choice may depend on the individual application, so
