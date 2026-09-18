@@ -88,15 +88,18 @@ extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRep
     }
 }
 
-/// Derives `Generic` for a struct.
+/// Derives `Generic` for a struct or raw-value enum.
 ///
-/// Stored properties must have explicit type annotations. For generic structs,
-/// put the `Generic` constraints on the struct declaration itself. The complete
-/// conformance is emitted in an extension so the struct retains its synthesized
-/// memberwise initializer. Public conversion witnesses are `@inlinable` only
-/// when every encoded field is public or usable from inline code. A nested type
-/// cannot be `private` because its generated conformance extension is
-/// file-scoped; use `fileprivate` instead.
+/// Structs are represented by their stored, explicitly typed properties. For
+/// generic structs, put the `Generic` constraints on the struct declaration
+/// itself. Raw-value enums use `RawValueRepresentation<Self>` and cannot have
+/// associated values. Because macros cannot resolve types, the first inherited
+/// type is treated as a possible raw type; protocol-only inheritance is rejected
+/// later by the compiler. The complete conformance is emitted in an extension
+/// so the struct retains its synthesized memberwise initializer. Public
+/// conversion witnesses are `@inlinable` only when every encoded field is
+/// public or usable from inline code. A nested type cannot be `private` because
+/// its generated conformance extension is file-scoped; use `fileprivate` instead.
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 

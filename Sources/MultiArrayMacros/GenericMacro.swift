@@ -76,8 +76,12 @@ public struct GenericExtensionMacro: ExtensionMacro {
             return []
         }
 
-        guard let structDecl = declGroup.as(StructDeclSyntax.self) else {
-            let message = MacroExpansionErrorMessage("@Generic can only be applied to a struct")
+        if let enumDecl = declGroup.as(EnumDeclSyntax.self), diagnoseUnsupportedEnum(enumDecl, in: context) {
+            return []
+        }
+
+        guard declGroup.as(StructDeclSyntax.self) != nil || declGroup.as(EnumDeclSyntax.self) != nil else {
+            let message = MacroExpansionErrorMessage("@Generic can only be applied to structs and raw-value enums")
             if let namedDecl = declGroup.asProtocol(NamedDeclSyntax.self) {
                 context.diagnose(Diagnostic(node: namedDecl.name, message: message))
             }
@@ -87,19 +91,29 @@ public struct GenericExtensionMacro: ExtensionMacro {
             return []
         }
 
-        let extraction = extractStoredProperties(structDecl)
-        guard extraction.isValid else {
-            for property in extraction.untypedProperties where !property.isBoxed {
-                let name = property.pattern.identifier.text
-                let message = MacroExpansionErrorMessage(
-                    "@Generic requires an explicit type annotation on stored property '\(name)'"
-                )
-                context.diagnose(Diagnostic(node: property.pattern, message: message))
+        let body: String
+        if let structDecl = declGroup.as(StructDeclSyntax.self) {
+            let extraction = extractStoredProperties(structDecl)
+            guard extraction.isValid else {
+                for property in extraction.untypedProperties where !property.isBoxed {
+                    let name = property.pattern.identifier.text
+                    let message = MacroExpansionErrorMessage(
+                        "@Generic requires an explicit type annotation on stored property '\(name)'"
+                    )
+                    context.diagnose(Diagnostic(node: property.pattern, message: message))
+                }
+                return []
             }
+            body = buildBody(extraction.properties, accessLevel: extractAccessLevel(structDecl))
+        }
+        else if let enumDecl = declGroup.as(EnumDeclSyntax.self) {
+            let access = accessPrefix(extractAccessLevel(enumDecl))
+            body = "\(access)typealias RawRepresentation = RawValueRepresentation<Self>"
+        }
+        else {
             return []
         }
 
-        let body = buildBody(extraction.properties, accessLevel: extractAccessLevel(structDecl))
         // Do not copy a generic declaration's where clause onto the extension. The original
         // declaration already establishes those constraints, and duplicating them has caused
         // circular-reference diagnostics in Swift compilers.
@@ -124,6 +138,28 @@ public struct GenericExtensionMacro: ExtensionMacro {
         let node = declaration.asProtocol(NamedDeclSyntax.self).map { Syntax($0.name) } ?? Syntax(declaration)
         context.diagnose(Diagnostic(node: node, message: message))
         return true
+    }
+
+    static func diagnoseUnsupportedEnum(
+        _ enumDecl: EnumDeclSyntax,
+        in context: some MacroExpansionContext
+    ) -> Bool {
+        if hasAssociatedValues(enumDecl) {
+            let message = MacroExpansionErrorMessage("@Generic does not support enums with associated values")
+            context.diagnose(Diagnostic(node: enumDecl.name, message: message))
+            return true
+        }
+
+        guard enumDecl.inheritanceClause?.inheritedTypes.isEmpty == false else {
+            let name = enumDecl.name.text
+            let message = MacroExpansionErrorMessage(
+                "@Generic requires a raw-value enum; '\(name)' has no raw type"
+            )
+            context.diagnose(Diagnostic(node: enumDecl.name, message: message))
+            return true
+        }
+
+        return false
     }
 
     static func extractStoredProperties(_ structDecl: StructDeclSyntax) -> StoredPropertyExtraction {
@@ -212,6 +248,13 @@ public struct GenericExtensionMacro: ExtensionMacro {
         return Array(declaration.bindings)
     }
 
+    static func hasAssociatedValues(_ enumDecl: EnumDeclSyntax) -> Bool {
+        enumDecl.memberBlock.members.contains { member in
+            guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else { return false }
+            return caseDecl.elements.contains { $0.parameterClause != nil }
+        }
+    }
+
     static func storedProperty(
         named name: String,
         type: TypeSyntax,
@@ -219,10 +262,10 @@ public struct GenericExtensionMacro: ExtensionMacro {
         isBoxed: Bool
     ) -> StoredProperty {
         let isPublic = declaration.modifiers.contains { $0.name.tokenKind == .keyword(.public) }
+        let isPackage = declaration.modifiers.contains { $0.name.tokenKind == .keyword(.package) }
         let hasUsableFromInline = declaration.attributes.contains {
             $0.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "usableFromInline"
         }
-        let isPackage = declaration.modifiers.contains { $0.name.tokenKind == .keyword(.package) }
 
         // @Box's peer role marks backing storage @usableFromInline for public and
         // package properties. Mirror that known transformation instead of assuming

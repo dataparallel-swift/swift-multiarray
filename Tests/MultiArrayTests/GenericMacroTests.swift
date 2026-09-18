@@ -18,6 +18,25 @@ import Testing
 
 @Suite
 struct GenericMacroTests {
+    // MARK: - Raw-value enum
+
+    @Test
+    func macroRawValueEnumRoundtrip() throws {
+        let original: MultiArray<MacroStatus> = [.off, .on, .off]
+        let encoded = original.encode()
+        let decoded = try MultiArray<MacroStatus>(data: encoded)
+        #expect(decoded == original)
+    }
+
+    @Test
+    func macroRawValueEnumRejectsInvalidValue() throws {
+        let encoded = MultiArray<UInt8>([2]).encode()
+
+        #expect(throws: BinaryMultiArrayError.invalidRawRepresentation(index: 0)) {
+            _ = try MultiArray<MacroStatus>(data: encoded)
+        }
+    }
+
     // MARK: - Empty struct (Unit)
 
     @Test
