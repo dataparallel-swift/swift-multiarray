@@ -126,8 +126,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     }
 }
 
-// Wrapper so that we can expose the buffer using the surface Element type,
-// rather than the underlying RawRepresentation type.
+/// A view of uninitialized storage using the surface element type.
+///
+/// Only the prefix reported through `initializedCount` may be initialized;
+/// update that count even if the initialization closure throws.
 public struct UninitializedMultiArrayData<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     let storage: Element.RawRepresentation.Buffer
