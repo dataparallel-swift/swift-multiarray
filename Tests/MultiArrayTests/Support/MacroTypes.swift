@@ -14,6 +14,12 @@
 
 import MultiArray
 
+@Generic
+public enum MacroStatus: UInt8 {
+    case off
+    case on
+}
+
 // Test empty struct (uses Unit)
 @Generic
 public struct MacroEmpty: Equatable {
