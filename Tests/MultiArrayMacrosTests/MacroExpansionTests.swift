@@ -88,27 +88,6 @@ struct MacroExpansionTests {
     }
 
     @Test
-    func genericDiagnosesNonStructDeclaration() {
-        assertMacroExpansion(
-            """
-            @Generic
-            class Value {}
-            """,
-            expandedSource: """
-            class Value {}
-            """,
-            diagnostics: [
-                DiagnosticSpec(
-                    message: "@Generic can only be applied to a struct",
-                    line: 2,
-                    column: 7
-                ),
-            ],
-            macros: ["Generic": GenericExtensionMacro.self]
-        )
-    }
-
-    @Test
     func genericDiagnosesPrivateNestedType() {
         assertMacroExpansion(
             """
@@ -292,6 +271,105 @@ struct MacroExpansionTests {
                 }
             }
             """,
+            macros: ["Generic": GenericExtensionMacro.self]
+        )
+    }
+
+    @Test
+    func genericDiagnosesNonStructDeclaration() {
+        assertMacroExpansion(
+            """
+            @Generic
+            class Value {}
+            """,
+            expandedSource: """
+            class Value {}
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "@Generic can only be applied to structs and raw-value enums",
+                    line: 2,
+                    column: 7
+                ),
+            ],
+            macros: ["Generic": GenericExtensionMacro.self]
+        )
+    }
+
+    @Test
+    func genericBuildsRawValueEnumRepresentation() {
+        assertMacroExpansion(
+            """
+            @Generic
+            public enum Status: UInt8, CaseIterable {
+                case off
+                case on
+            }
+            """,
+            expandedSource: """
+            public enum Status: UInt8, CaseIterable {
+                case off
+                case on
+            }
+
+            extension Status: Generic {
+                public typealias RawRepresentation = RawValueRepresentation<Self>
+            }
+            """,
+            macros: ["Generic": GenericExtensionMacro.self]
+        )
+    }
+
+    @Test
+    func genericDiagnosesEnumWithoutRawType() {
+        assertMacroExpansion(
+            """
+            @Generic
+            enum Direction {
+                case north
+                case south
+            }
+            """,
+            expandedSource: """
+            enum Direction {
+                case north
+                case south
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "@Generic requires a raw-value enum; 'Direction' has no raw type",
+                    line: 2,
+                    column: 6
+                ),
+            ],
+            macros: ["Generic": GenericExtensionMacro.self]
+        )
+    }
+
+    @Test
+    func genericDiagnosesPayloadEnum() {
+        assertMacroExpansion(
+            """
+            @Generic
+            enum Result {
+                case value(Int)
+                case failure
+            }
+            """,
+            expandedSource: """
+            enum Result {
+                case value(Int)
+                case failure
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "@Generic does not support enums with associated values",
+                    line: 2,
+                    column: 6
+                ),
+            ],
             macros: ["Generic": GenericExtensionMacro.self]
         )
     }

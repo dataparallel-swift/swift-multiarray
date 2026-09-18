@@ -30,11 +30,10 @@ The module also ships conformances for `Date` (via `TimeInterval`) and `UUID`
 
 ### Macro scaffold
 
-The package declares an `@Generic` macro and contains a compiler-plugin target,
-but its expansion is currently only a placeholder; it does not yet derive a
-usable representation from a declaration's stored properties. Until that
-implementation lands, conforming types must provide `RawRepresentation`,
-`rawRepresentation`, and `init(from:)` themselves.
+For structs, the `@Generic` macro derives the representation and conversion
+witnesses in a conformance extension. For raw-value enums without associated
+values, it derives a `RawValueRepresentation<Self>` typealias; the shared
+`RawRepresentable` extension supplies the conversion witnesses and validation.
 
 The `T2`–`T16` tuple helpers in `Tuple.swift` are conveniences for hand-written
 conformances. `Product` can be nested directly when another shape is preferable.
