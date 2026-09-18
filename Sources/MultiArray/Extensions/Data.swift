@@ -259,6 +259,11 @@ extension Data {
 //    for structure types due to the aforementioned exclusion of Box, thus there
 //    is no way to encode types that might include internal padding.
 //
+/// A raw representation that can be encoded as a native binary snapshot.
+///
+/// Implement this only for storage whose bytes are fully initialized and
+/// contain no references. The tag requirements describe the representation,
+/// not the original Swift element type. Snapshots are not a stable wire format.
 public protocol BinaryArrayData: ArrayData {
     static var type: Type { get }
     static var typeHead: TypeHead { get }
@@ -397,7 +402,11 @@ extension SIMD16: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentatio
 extension SIMD32: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentation: BinaryArrayData {}
 extension SIMD64: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentation: BinaryArrayData {}
 
-// A representation of types for our tiny closed universe
+/// The recursive representation tag used by native binary snapshots.
+///
+/// This is exposed by `BinaryArrayData` but is a format implementation detail,
+/// not a surface-type identifier or a stable wire-format guarantee.
+@_documentation(visibility: internal)
 public indirect enum Type: Equatable, CustomStringConvertible {
     case unit
     case int(bits: UInt8) // 8, 16, 32, 64, 128
@@ -429,7 +438,11 @@ public indirect enum Type: Equatable, CustomStringConvertible {
     }
 }
 
-// A partial type fragment (the non-recursive head of the type)
+/// The nonrecursive head of a native binary snapshot's representation tag.
+///
+/// This is exposed by `BinaryArrayData` for compatibility with custom
+/// conformances; it does not identify the original Swift element type.
+@_documentation(visibility: internal)
 public enum TypeHead: RawRepresentable, Equatable, CustomStringConvertible {
     case unit
     case product
