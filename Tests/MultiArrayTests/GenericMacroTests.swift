@@ -265,6 +265,67 @@ struct GenericMacroTests {
         #expect(restored == v)
     }
 
+    // MARK: - @Box property macro
+
+    @Test
+    func macroLabeledComputedRoundtrip() {
+        let array: [MacroLabeledComputed] = [
+            .init(label: "hello", value: 1.0),
+            .init(label: "world", value: 2.0),
+        ]
+        let ma = MultiArray(array)
+        let roundtrip = Array(ma)
+        #expect(roundtrip == array)
+    }
+
+    @Test
+    func macroLabeledComputedAccessor() {
+        var v = MacroLabeledComputed(label: "original", value: 1.0)
+        #expect(v.label == "original")
+        v.label = "updated"
+        #expect(v.label == "updated")
+    }
+
+    @Test
+    func macroLabeledComputedRawRepresentation() {
+        let v = MacroLabeledComputed(label: "test", value: 42.0)
+        let restored = MacroLabeledComputed(from: v.rawRepresentation)
+        #expect(restored == v)
+    }
+
+    @Test
+    func macroLabeledDefaultedAccessor() {
+        var value = MacroLabeledDefaulted()
+        #expect(value.label == "guest")
+        #expect(value.value == 1.0)
+        value.label = "updated"
+        #expect(value.label == "updated")
+    }
+
+    @Test
+    func macroLabeledDefaultedRoundtrip() {
+        var second = MacroLabeledDefaulted()
+        second.label = "custom"
+        second.value = 2.0
+
+        let array: [MacroLabeledDefaulted] = [
+            .init(),
+            second,
+        ]
+        let ma = MultiArray(array)
+        let roundtrip = Array(ma)
+        #expect(roundtrip == array)
+    }
+
+    @Test
+    func macroDefaultedPackageAccessor() {
+        var value = MacroDefaultedPackage()
+        #expect(value.label == "guest")
+        #expect(value.value == 1.0)
+        value.label = "updated"
+        #expect(value.label == "updated")
+    }
+
     // MARK: - Computed properties excluded from encoding
 
     @Test

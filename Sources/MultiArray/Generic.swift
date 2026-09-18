@@ -100,6 +100,17 @@ extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRep
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 
+/// Wraps a mutable stored property in `Box` while exposing its original type.
+///
+/// Use this inside an `@Generic` struct when a field's type is not itself
+/// `Generic`. The macro creates a `_name: Box<T>` backing field and transparent
+/// accessors. Initializers without a property default must initialize that
+/// backing field directly. Accessor macros cannot be applied to `let`; use an
+/// explicit `Box<T>` property for immutable fields.
+@attached(accessor, names: named(get), named(set))
+@attached(peer, names: prefixed(_))
+public macro Box() = #externalMacro(module: "MultiArrayMacros", type: "BoxPropertyMacro")
+
 // Primal, fixed size types
 extension Int8: Generic {}
 extension Int16: Generic {}
