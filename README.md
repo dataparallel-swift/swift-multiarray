@@ -32,6 +32,22 @@ Binary snapshots continue to encode only the `UInt8` representation tag. Raw
 values are validated as `Status` during decoding, including when the value is a
 field nested inside a product representation.
 
+For enums declared in the current module, the macro derives the same
+conformance:
+
+```swift
+@Generic
+enum Status: UInt8 {
+    case off = 0
+    case on = 1
+}
+```
+
+Enums with associated values are not supported. Because attached macros cannot
+resolve inherited type names, the macro treats the first inheritance entry as a
+possible raw type. A protocol-only clause therefore proceeds to Swift's normal
+semantic checking, which reports that the enum is not `RawRepresentable`.
+
 Consider the following datatype:
 
 ```swift
