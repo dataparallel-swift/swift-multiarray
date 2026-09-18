@@ -90,8 +90,13 @@ extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRep
 
 /// Derives `Generic` for a struct or raw-value enum.
 ///
-/// Structs are represented by their stored, explicitly typed properties. For
-/// generic structs, put the `Generic` constraints on the struct declaration
+/// Structs are represented by their stored, explicitly typed properties.
+/// Stored properties inside conditional compilation blocks and stored `let`
+/// properties initialized at their declaration are diagnosed, not excluded.
+/// For conditional stored properties, write the conformance by hand instead
+/// of applying this macro.
+/// Initialize immutable fields in an initializer. For generic structs, put the
+/// `Generic` constraints on the struct declaration
 /// itself. Raw-value enums use `RawValueRepresentation<Self>` and cannot have
 /// associated values. Because macros cannot resolve types, the first inherited
 /// type is treated as a possible raw type; protocol-only inheritance is rejected
