@@ -25,13 +25,15 @@ struct StoredProperty {
 
 struct UntypedStoredProperty {
     let pattern: IdentifierPatternSyntax
+    let isBoxed: Bool
 }
 
 struct StoredPropertyExtraction {
     let properties: [StoredProperty]
     let untypedProperties: [UntypedStoredProperty]
+    let hasInvalidBoxDeclaration: Bool
 
-    var isValid: Bool { untypedProperties.isEmpty }
+    var isValid: Bool { untypedProperties.isEmpty && !hasInvalidBoxDeclaration }
 }
 
 enum AccessLevel {
@@ -87,7 +89,7 @@ public struct GenericExtensionMacro: ExtensionMacro {
 
         let extraction = extractStoredProperties(structDecl)
         guard extraction.isValid else {
-            for property in extraction.untypedProperties {
+            for property in extraction.untypedProperties where !property.isBoxed {
                 let name = property.pattern.identifier.text
                 let message = MacroExpansionErrorMessage(
                     "@Generic requires an explicit type annotation on stored property '\(name)'"
@@ -127,11 +129,23 @@ public struct GenericExtensionMacro: ExtensionMacro {
     static func extractStoredProperties(_ structDecl: StructDeclSyntax) -> StoredPropertyExtraction {
         var properties: [StoredProperty] = []
         var untypedProperties: [UntypedStoredProperty] = []
+        var hasInvalidBoxDeclaration = false
         for member in structDecl.memberBlock.members {
             guard let varDecl = member.decl.as(VariableDeclSyntax.self) else { continue }
             guard !varDecl.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }) else { continue }
 
-            let bindings = Array(varDecl.bindings)
+            // @Box transforms the annotated property into a computed get/set backed by _name: Box<T>.
+            // @Generic sees the source before @Box expands, so we detect the attribute here and
+            // record the backing store directly instead of the (soon-to-be-computed) property.
+            let isBoxed = varDecl.attributes.contains {
+                $0.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "Box"
+            }
+
+            let bindings = extractableBindings(
+                from: varDecl,
+                isBoxed: isBoxed,
+                hasInvalidBoxDeclaration: &hasInvalidBoxDeclaration
+            )
             var effectiveTypes = Array<TypeSyntax?>(repeating: nil, count: bindings.count)
             var sharedType: TypeSyntax?
 
@@ -157,32 +171,69 @@ public struct GenericExtensionMacro: ExtensionMacro {
                 if let block = binding.accessorBlock, !isStoredAccessorBlock(block) { continue }
 
                 guard let type = effectiveTypes[index] else {
-                    untypedProperties.append(UntypedStoredProperty(pattern: identifier))
+                    untypedProperties.append(UntypedStoredProperty(pattern: identifier, isBoxed: isBoxed))
                     continue
                 }
 
                 properties.append(
-                    storedProperty(named: identifier.identifier.text, type: type, declaration: varDecl)
+                    storedProperty(
+                        named: identifier.identifier.text,
+                        type: type,
+                        declaration: varDecl,
+                        isBoxed: isBoxed
+                    )
                 )
             }
         }
-        return StoredPropertyExtraction(properties: properties, untypedProperties: untypedProperties)
+        return StoredPropertyExtraction(
+            properties: properties,
+            untypedProperties: untypedProperties,
+            hasInvalidBoxDeclaration: hasInvalidBoxDeclaration
+        )
+    }
+
+    static func isInvalidBoxDeclaration(_ declaration: VariableDeclSyntax, isBoxed: Bool) -> Bool {
+        guard isBoxed else { return false }
+        return declaration.bindings.count != 1 ||
+            declaration.bindings.first?.pattern.is(IdentifierPatternSyntax.self) != true
+    }
+
+    static func extractableBindings(
+        from declaration: VariableDeclSyntax,
+        isBoxed: Bool,
+        hasInvalidBoxDeclaration: inout Bool
+    ) -> [PatternBindingSyntax] {
+        guard !isInvalidBoxDeclaration(declaration, isBoxed: isBoxed) else {
+            // Swift diagnoses the accessor/peer restriction before @Box expands.
+            // Suppress @Generic's dependent missing-backing-field errors.
+            hasInvalidBoxDeclaration = true
+            return []
+        }
+        return Array(declaration.bindings)
     }
 
     static func storedProperty(
         named name: String,
         type: TypeSyntax,
-        declaration: VariableDeclSyntax
+        declaration: VariableDeclSyntax,
+        isBoxed: Bool
     ) -> StoredProperty {
         let isPublic = declaration.modifiers.contains { $0.name.tokenKind == .keyword(.public) }
         let hasUsableFromInline = declaration.attributes.contains {
             $0.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "usableFromInline"
         }
-        return StoredProperty(
-            name: name,
-            type: type,
-            isUsableFromInline: isPublic || hasUsableFromInline
-        )
+        let isPackage = declaration.modifiers.contains { $0.name.tokenKind == .keyword(.package) }
+
+        // @Box's peer role marks backing storage @usableFromInline for public and
+        // package properties. Mirror that known transformation instead of assuming
+        // that arbitrary peer macros make their generated storage ABI-public.
+        let isUsableFromInline = isBoxed ? isPublic || isPackage : isPublic || hasUsableFromInline
+        if isBoxed {
+            let typeStr = type.trimmed.description
+            let boxedType: TypeSyntax = "Box<\(raw: typeStr)>"
+            return StoredProperty(name: "_\(name)", type: boxedType, isUsableFromInline: isUsableFromInline)
+        }
+        return StoredProperty(name: name, type: type, isUsableFromInline: isUsableFromInline)
     }
 
     static func isStoredAccessorBlock(_ block: AccessorBlockSyntax) -> Bool {

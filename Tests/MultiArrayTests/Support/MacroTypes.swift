@@ -177,6 +177,38 @@ public struct MacroLabeled: Equatable {
     }
 }
 
+// Test @Box property macro on var: get+set accessor, var backing store.
+// For immutable boxed fields, write `let label: Box<String>` explicitly (see MacroLabeled).
+// Swift does not allow @attached(accessor) on let declarations.
+@Generic
+public struct MacroLabeledComputed: Equatable {
+    @Box public var label: String
+    public let value: Float
+
+    public init(label: String, value: Float) {
+        self._label = Box(label)
+        self.value = value
+    }
+}
+
+// Test @Box property macro with default values.
+@Generic
+public struct MacroLabeledDefaulted: Equatable {
+    @Box public var label: String = "guest"
+    public var value: Float = 1.0
+
+    public init() {}
+}
+
+// Test package access level + default value on @Box property.
+@Generic
+package struct MacroDefaultedPackage: Equatable {
+    @Box package var label: String = "guest"
+    package var value: Float = 1.0
+
+    package init() {}
+}
+
 // Test that computed properties are excluded; only stored fields are encoded.
 // Equivalent to the pattern where a backing _field is stored and a computed
 // property provides a typed view of it.
