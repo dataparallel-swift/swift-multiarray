@@ -23,8 +23,14 @@ extension MultiArray {
     /// picked up when the type is statically known to be MultiArray.
     @inlinable
     public func map<B: Generic>(_ transform: (Self.Element) throws -> B) rethrows -> MultiArray<B> {
-        try .init(count: self.count) { i in
-            try transform(self[i])
+        // Keep the source buffer loop-invariant. Swift 6.2 and 6.3 otherwise
+        // reload it through self[i] on every iteration, blocking vectorization.
+        let source = self.arrayData.storage
+        // Keep the owner of source's raw pointers alive through the loop.
+        // withExtendedLifetime currently blocks the vectorization check.
+        defer { _fixLifetime(self) }
+        return try .init(count: self.count) { i in
+            try transform(Element(from: Element.RawRepresentation.read(source, at: i)))
         }
     }
 }
