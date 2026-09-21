@@ -18,7 +18,6 @@ public struct Box<Element> {
     public let unbox: Element
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ value: Element) {
         self.unbox = value
     }
@@ -29,6 +28,7 @@ extension Box: Generic {
 }
 
 extension Box: Equatable where Element: Equatable {
+    @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool { lhs.unbox == rhs.unbox }
 }
 
@@ -60,15 +60,11 @@ extension Box: ArrayData {
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         Box(arrayData[index])
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         // Overwriting an already-initialised element will correctly
         // de-initialise any existing element. This is called via the subscript
@@ -77,15 +73,11 @@ extension Box: ArrayData {
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         reserveCapacity(for: Element.self, count: capacity, from: &context)
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: Element.self, count: capacity, from: offset)
     }

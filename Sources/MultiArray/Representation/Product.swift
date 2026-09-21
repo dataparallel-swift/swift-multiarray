@@ -20,7 +20,6 @@ public struct Product<A, B> {
     public let _1: B
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ lhs: A, _ rhs: B) {
         self._0 = lhs
         self._1 = rhs
@@ -31,13 +30,11 @@ extension Product: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Product<A.RawRepresentation, B.RawRepresentation>
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Product<A.RawRepresentation, B.RawRepresentation> {
         .init(self._0.rawRepresentation, self._1.rawRepresentation)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = Product(
             A(from: rep._0),
@@ -74,8 +71,6 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         .init(
             A.read(arrayData.0, at: index),
@@ -84,16 +79,12 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         A.write(arrayData.0, at: index, to: value._0)
         B.write(arrayData.1, at: index, to: value._1)
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         let aR = A.reserve(capacity: capacity, from: &context)
         let bR = B.reserve(capacity: capacity, from: &context)
@@ -101,8 +92,6 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: B.self, count: capacity, from: getRawSize(for: A.self, count: capacity, from: offset))
     }

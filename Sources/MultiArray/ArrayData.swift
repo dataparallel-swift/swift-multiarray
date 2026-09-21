@@ -66,29 +66,21 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func read(_ arrayData: Self.Buffer, at index: Int) -> Self {
         arrayData[index]
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func write(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         arrayData[index] = value
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Self.Buffer {
         reserveCapacity(for: Self.self, count: capacity, from: &context)
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int {
         getRawSize(for: Self.self, count: capacity, from: offset)
     }
@@ -146,9 +138,6 @@ public extension SIMD {
 // We could also reduce the duplication here if we could treat addresses as Ints
 // and not magically unsafe entities to be scared of
 
-// @inlinable
-// @inline(__always)
-// @_alwaysEmitIntoClient
 @usableFromInline
 internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int {
     let padding = -offset & (MemoryLayout<T>.alignment - 1)
@@ -157,9 +146,6 @@ internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int 
     return end
 }
 
-// @inlinable
-// @inline(__always)
-// @_alwaysEmitIntoClient
 @usableFromInline
 internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
     let begin = context.alignedUp(for: type)
