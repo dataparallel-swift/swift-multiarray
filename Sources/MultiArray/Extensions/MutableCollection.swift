@@ -14,7 +14,6 @@
 
 extension MultiArray: MutableCollection {
     @inlinable
-    @_alwaysEmitIntoClient
     public subscript(index: Index) -> Element {
         get {
             Element(from: self.arrayData[index])

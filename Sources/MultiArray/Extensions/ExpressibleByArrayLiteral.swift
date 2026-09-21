@@ -13,6 +13,7 @@
 // limitations under the License.
 
 extension MultiArray: ExpressibleByArrayLiteral {
+    @inlinable
     public init(arrayLiteral elements: Element...) {
         self.init(elements)
     }

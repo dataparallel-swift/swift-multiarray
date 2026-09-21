@@ -15,6 +15,9 @@
 extension MultiArray: RandomAccessCollection {
     public typealias Index = Int
 
+    @inlinable
     public var startIndex: Index { 0 }
+
+    @inlinable
     public var endIndex: Index { self.count }
 }
