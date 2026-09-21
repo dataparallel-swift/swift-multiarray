@@ -212,7 +212,6 @@ internal final class MultiArrayData<A: ArrayData> {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     subscript(index: Int) -> A {
         get {
             A.read(self.storage, at: index)
