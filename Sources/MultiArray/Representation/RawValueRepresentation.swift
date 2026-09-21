@@ -39,13 +39,11 @@ public struct RawValueRepresentation<Value: RawRepresentable> {
 
 extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRepresentation<Self> {
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: RawRepresentation {
         RawValueRepresentation(unchecked: self.rawValue)
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         guard let value = Self(rawValue: rep.rawValue) else {
             preconditionFailure("Invalid raw value for \(Self.self): \(rep.rawValue)")

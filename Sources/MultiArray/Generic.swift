@@ -40,11 +40,9 @@ public protocol Generic {
 
 extension Generic where RawRepresentation == Self {
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: RawRepresentation { self }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) { self = rep }
 }
 
@@ -116,11 +114,9 @@ extension Int: Generic {
     #endif
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: RawRepresentation { RawRepresentation(self) }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = Int(rep)
     }
@@ -134,11 +130,9 @@ extension UInt: Generic {
     #endif
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: RawRepresentation { RawRepresentation(self) }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = UInt(rep)
     }
@@ -148,11 +142,9 @@ extension Bool: Generic {
     public typealias RawRepresentation = UInt8
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: UInt8 { self ? 1 : 0 }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = rep != 0
     }
