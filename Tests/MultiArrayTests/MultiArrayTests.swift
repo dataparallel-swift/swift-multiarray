@@ -194,6 +194,78 @@ struct MultiArrayTests {
         }
     }
 
+    // MARK: - Throwing init error path tests
+
+    // These tests verify that when the throwing init partially initializes
+    // elements and then throws, exactly the initialized elements are
+    // deinitialized -- no leaks (liveCount > 0) and no UB (crash from
+    // deinitializing garbage memory).
+
+    @Suite
+    struct ThrowingInitTests {
+        struct PartialInitError: Error {}
+
+        @Test
+        func throwingInitWithTrivialType() throws {
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Int>(unsafeUninitializedCapacity: 10) { buffer, _ in
+                    buffer.initializeElement(at: 0, to: 1)
+                    buffer.initializeElement(at: 1, to: 2)
+                    throw PartialInitError()
+                }
+            }
+        }
+
+        @Test
+        func throwingInitWithBoxType() throws {
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Box<String>>(unsafeUninitializedCapacity: 10) { buffer, initializedCount in
+                    buffer.initializeElement(at: 0, to: Box("hello"))
+                    buffer.initializeElement(at: 1, to: Box("world"))
+                    initializedCount = 2
+                    throw PartialInitError()
+                }
+            }
+        }
+
+        @Test
+        func partialInitDeinitializesExactlyInitializedElements() throws {
+            // Tracked class counts live instances to verify no leaks
+            final class Tracked {
+                nonisolated(unsafe) static var liveCount: Int = 0
+
+                init() { Tracked.liveCount += 1 }
+                deinit { Tracked.liveCount -= 1 }
+            }
+
+            Tracked.liveCount = 0
+            let toInitialize = 3
+
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Box<Tracked>>(unsafeUninitializedCapacity: 10) { buffer, initializedCount in
+                    var initialized = 0
+                    defer { initializedCount = initialized }
+
+                    for i in 0 ..< toInitialize {
+                        buffer.initializeElement(at: i, to: Box(Tracked()))
+                        initialized += 1
+                    }
+
+                    // At this point we've initialized `toInitialize` elements
+                    #expect(Tracked.liveCount == toInitialize)
+
+                    throw PartialInitError()
+                }
+            }
+
+            // After the throw, the local arrayData is deallocated. Its deinit
+            // should deinitialize exactly `toInitialize` elements. If it
+            // deinitializes fewer, liveCount > 0 (leak). If it deinitializes
+            // more, we get UB/crash from calling deinit on garbage memory.
+            #expect(Tracked.liveCount == 0, "all \(toInitialize) initialized elements should be deinitialized after throw")
+        }
+    }
+
     // MARK: - Roundtrip tests
 
     @Suite
