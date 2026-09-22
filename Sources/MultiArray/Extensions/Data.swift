@@ -357,56 +357,6 @@ extension SIMD16: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentatio
 extension SIMD32: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentation: BinaryArrayData {}
 extension SIMD64: BinaryArrayData where Scalar: Generic, Scalar.RawRepresentation: BinaryArrayData {}
 
-// Datatype-generic markers
-extension Unit: BinaryArrayData {
-    public static var type: Type { .unit }
-    public static var typeHead: TypeHead { .unit }
-
-    public static func verifyType(in data: Data, at offset: inout Int) throws {
-        try verifyByte(expecting: Self.typeHead.rawValue, in: data, at: &offset)
-    }
-
-    public static func appendType(to data: inout Data) {
-        data.append(Self.typeHead.rawValue)
-    }
-}
-
-// extension Box: BinaryArrayData { } -- not allowed; may include pointers, etc.
-
-extension Product: BinaryArrayData where A: BinaryArrayData, B: BinaryArrayData {
-    public static var type: Type {
-        .product(lhs: A.type, rhs: B.type)
-    }
-
-    public static var typeHead: TypeHead {
-        .product
-    }
-
-    public static func verifyType(in data: Data, at offset: inout Int) throws {
-        try verifyByte(expecting: Self.typeHead.rawValue, in: data, at: &offset)
-        try A.verifyType(in: data, at: &offset)
-        try B.verifyType(in: data, at: &offset)
-    }
-
-    public static func appendType(to data: inout Data) {
-        data.append(Self.typeHead.rawValue)
-        A.appendType(to: &data)
-        B.appendType(to: &data)
-    }
-
-    public static func firstInvalidElement(in buffer: Buffer, count: Int) -> Int? {
-        switch (
-            A.firstInvalidElement(in: buffer.0, count: count),
-            B.firstInvalidElement(in: buffer.1, count: count)
-        ) {
-            case let (left?, nil): left
-            case let (nil, right?): right
-            case let (left?, right?): min(left, right)
-            case (nil, nil): nil
-        }
-    }
-}
-
 // A representation of types for our tiny closed universe
 public indirect enum Type: Equatable, CustomStringConvertible {
     case unit
