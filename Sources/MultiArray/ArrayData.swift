@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
+
 // Storage of datatype-generic values with an underlying struct-of-arrays
 // representation. This is intended to be _closed_, as it only operates over the
 // fixed set of Generic representation types.
@@ -19,6 +21,11 @@ public protocol ArrayData {
     associatedtype Buffer
 
     static func initialize(_ arrayData: Buffer, at: Int, to value: Self)
+
+    /// Initializes the first `count` elements of an uninitialized destination
+    /// from initialized, nonoverlapping source storage. Implementations must
+    /// preserve value ownership, including retaining reference-valued fields.
+    static func initialize(_ arrayData: Buffer, from: Buffer, count: Int)
     static func deinitialize(_ arrayData: Buffer, count: Int)
 
     static func read(_ arrayData: Buffer, at index: Int) -> Self
@@ -34,6 +41,19 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     @inlinable
     public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         (arrayData + index).initialize(to: value)
+    }
+
+    @inlinable
+    public static func initialize(_ destination: Self.Buffer, from source: Self.Buffer, count: Int) {
+        // XXX: We could use the following to avoid importing Foundation, and
+        // once we reach this pathway it should compile down to the same thing.
+        // To statically ensure this we would like to add the BitwiseCopyable
+        // constraint, but SIMDStorage is not BitwiseCopyable (even though it
+        // really is) so instead of relying on the optimisation to fire just
+        // call memcpy directly.
+        //
+        // > destination.initialize(from: source, count: count)
+        memcpy(destination, source, count * MemoryLayout<Self>.stride)
     }
 
     @inlinable
@@ -116,6 +136,9 @@ extension Unit: ArrayData {
     public static func initialize(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
 
     @inlinable
+    public static func initialize(_: Self.Buffer, from _: Self.Buffer, count _: Int) { /* no-op */ }
+
+    @inlinable
     public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
@@ -148,6 +171,11 @@ extension Box: ArrayData {
     @inlinable
     public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         (arrayData + index).initialize(to: value.unbox)
+    }
+
+    @inlinable
+    public static func initialize(_ arrayData: Self.Buffer, from source: Self.Buffer, count: Int) {
+        arrayData.initialize(from: source, count: count)
     }
 
     @inlinable
@@ -195,6 +223,12 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public static func initialize(_ arrayData: Self.Buffer, at index: Int, to value: Self) {
         A.initialize(arrayData.0, at: index, to: value._0)
         B.initialize(arrayData.1, at: index, to: value._1)
+    }
+
+    @inlinable
+    public static func initialize(_ arrayData: Self.Buffer, from source: Self.Buffer, count: Int) {
+        A.initialize(arrayData.0, from: source.0, count: count)
+        B.initialize(arrayData.1, from: source.1, count: count)
     }
 
     @inlinable

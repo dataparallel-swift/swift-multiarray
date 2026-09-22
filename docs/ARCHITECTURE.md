@@ -72,9 +72,18 @@ Padding between regions is zero-initialized.
 ## Mutation and ownership
 
 `MultiArrayData` is a class, so assigning a `MultiArray` shares the buffer.
-The `MutableCollection` subscript currently writes directly into that shared
-storage; copy-on-write has not yet been implemented. Mutating one of two copied
-`MultiArray` values therefore also changes the other.
+`MultiArray` nevertheless has value semantics: before indexed mutation,
+`_prepareForMutation()` checks whether the buffer is uniquely referenced and
+deep-copies every field buffer when it is shared. Scalar fields are copied as
+bytes, while `Box` fields are initialized as values so their payloads are
+retained correctly. All current and future operations that write to
+`arrayData` must route through this helper.
+
+Storage is allocated for exactly `count` elements and the collection is
+currently fixed-size.
+
+`MultiArray` does not conform to `Sendable`; an instance must remain within one
+concurrency isolation domain.
 
 ## Uninitialized construction
 
