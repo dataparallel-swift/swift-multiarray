@@ -22,6 +22,8 @@ public enum Sum<A, B> {
     case rhs(B)
 }
 
+extension Sum: Sendable where A: Sendable, B: Sendable {}
+
 extension Sum: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Sum<A.RawRepresentation, B.RawRepresentation>
 

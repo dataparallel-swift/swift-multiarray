@@ -23,6 +23,8 @@ public struct Box<Element> {
     }
 }
 
+extension Box: Sendable where Element: Sendable {}
+
 extension Box: Generic {
     public typealias RawRepresentation = Self
 }

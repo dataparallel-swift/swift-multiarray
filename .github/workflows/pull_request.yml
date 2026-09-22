@@ -29,6 +29,8 @@ jobs:
         run: scripts/test-linux.sh -Xswiftc -warnings-as-errors
       - name: Check Vectorization
         run: scripts/check-vectorization.sh
+      - name: Check Sendability
+        run: scripts/check-sendability.sh
 
   test-macos-26:
     name: Test macOS

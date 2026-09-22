@@ -37,6 +37,8 @@ public struct RawValueRepresentation<Value: RawRepresentable> {
     }
 }
 
+extension RawValueRepresentation: Sendable where Value.RawValue: Sendable {}
+
 extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRepresentation<Self> {
     @inlinable
     public var rawRepresentation: RawRepresentation {

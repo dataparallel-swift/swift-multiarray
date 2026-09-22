@@ -23,6 +23,7 @@ swiftlint --quiet --no-cache \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
+  "${ROOT_DIR}/Fixtures" \
   "${ROOT_DIR}/Benchmarks" \
   "${ROOT_DIR}/Snippets"
 
@@ -31,6 +32,7 @@ swiftformat --lint --cache ignore \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
+  "${ROOT_DIR}/Fixtures" \
   "${ROOT_DIR}/Benchmarks" \
   "${ROOT_DIR}/Snippets"
 

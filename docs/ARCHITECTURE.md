@@ -154,6 +154,45 @@ currently fixed-size.
 `MultiArray` does not conform to `Sendable`; an instance must remain within one
 concurrency isolation domain.
 
+### Transferable representations
+
+Transferability has two independent type-level conditions. A future
+transferable `MultiArray<Element>` requires both `Element: Sendable` and
+`Element.RawRepresentation: Sendable`. The first covers the value reconstructed
+and returned by a read; the second covers the logical values held in the stored
+representation. Requiring only the surface element is insufficient because the
+open `Generic` protocol can select a representation containing hidden
+non-`Sendable` state.
+
+These constraints do not make `Element.RawRepresentation.Buffer` sendable.
+Built-in buffers contain raw pointers, so the owner or scoped view must still
+provide audited lifetime and synchronization guarantees. `ArrayData`
+conformers used across isolation boundaries have an additional semantic
+obligation: `read(_:at:)` must not mutate shared state or expose non-`Sendable`
+state hidden by the buffer. `Generic` conversions must likewise be pure with
+respect to shared state.
+
+Swift cannot express that operational promise with a normal protocol
+refinement while retaining `Box<Element>` for every `Element: Sendable`:
+conditional conformance to a non-marker protocol may not depend on the marker
+protocol `Sendable`, and user protocols that inherit `Sendable` are not
+themselves treated as marker protocols. The design therefore uses standard
+`Sendable` constraints and documents the remaining unsafe-code obligation
+rather than introducing an underscored marker or unchecked representation
+conformances.
+
+The built-in representation tree composes checked `Sendable` conformances:
+`Unit`, boxes with sendable payloads, products and sums of sendable children,
+raw-value representations with a sendable raw value, and the `T2`–`T16`
+surface helpers. Checked conformances must be declared in the source file that
+defines their type, so they intentionally remain colocated rather than using
+`@unchecked` conformances in a central extension file.
+
+`BinaryArrayData` remains orthogonal. Binary snapshots deliberately exclude all
+`Box` values, including safe sendable payloads such as `String`, while binary
+encodability alone cannot prove that an external `Generic` conversion or
+`ArrayData` implementation is safe for concurrent access.
+
 ## Uninitialized construction
 
 `init(unsafeUninitializedCapacity:initializingWith:)` supports bulk construction

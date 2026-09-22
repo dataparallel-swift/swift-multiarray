@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@Generic` derivation for raw-value enums; enums with associated values or with no possible raw type are diagnosed
 - `@Box` for transparently storing mutable non-`Generic` properties, including default values; stored properties without an explicit type annotation are diagnosed, and an invalid `@Box` declaration does not cascade into `@Generic` errors
 - `Box: Equatable` conformance
+- Checked conditional `Sendable` conformances for the representation constructors
 - DocC guides with compiler-checked examples and a cross-version automatic-vectorization regression check
 
 ### Changed
