@@ -19,7 +19,6 @@ public struct T2<A, B> {
     public let _1: B
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B) {
         self._0 = _0
         self._1 = _1
@@ -30,7 +29,6 @@ extension T2: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Product<A, B>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         Product(
             _0.rawRepresentation,
@@ -39,7 +37,6 @@ extension T2: Generic where A: Generic, B: Generic {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T2(
             A(from: rep._0),
@@ -54,7 +51,6 @@ public struct T3<A, B, C> {
     public let _2: C
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C) {
         self._0 = _0
         self._1 = _1
@@ -66,13 +62,11 @@ extension T3: Generic where A: Generic, B: Generic, C: Generic {
     public typealias RawRepresentation = T2<T2<A, B>, C>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: T2<T2<A, B>, C>.RawRepresentation {
         T2(T2(_0, _1), _2).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T3(
             A(from: rep._0._0),
@@ -89,7 +83,6 @@ public struct T4<A, B, C, D> {
     public let _3: D
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D) {
         self._0 = _0
         self._1 = _1
@@ -102,13 +95,11 @@ extension T4: Generic where A: Generic, B: Generic, C: Generic, D: Generic {
     public typealias RawRepresentation = T2<T2<A, B>, T2<C, D>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T2(_0, _1), T2(_2, _3)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T4(
             A(from: rep._0._0),
@@ -127,7 +118,6 @@ public struct T5<A, B, C, D, E> {
     public let _4: E
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E) {
         self._0 = _0
         self._1 = _1
@@ -141,13 +131,11 @@ extension T5: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
     public typealias RawRepresentation = T2<T4<A, B, C, D>, E>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T4(_0, _1, _2, _3), _4).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T5(
             A(from: rep._0._0._0),
@@ -168,7 +156,6 @@ public struct T6<A, B, C, D, E, F> {
     public let _5: F
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E, _ _5: F) {
         self._0 = _0
         self._1 = _1
@@ -183,13 +170,11 @@ extension T6: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
     public typealias RawRepresentation = T2<T4<A, B, C, D>, T2<E, F>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T4(_0, _1, _2, _3), T2(_4, _5)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T6(
             A(from: rep._0._0._0),
@@ -212,7 +197,6 @@ public struct T7<A, B, C, D, E, F, G> {
     public let _6: G
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E, _ _5: F, _ _6: G) {
         self._0 = _0
         self._1 = _1
@@ -228,13 +212,11 @@ extension T7: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
     public typealias RawRepresentation = T2<T4<A, B, C, D>, T3<E, F, G>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T4(_0, _1, _2, _3), T3(_4, _5, _6)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T7(
             A(from: rep._0._0._0),
@@ -259,7 +241,6 @@ public struct T8<A, B, C, D, E, F, G, H> {
     public let _7: H
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E, _ _5: F, _ _6: G, _ _7: H) {
         self._0 = _0
         self._1 = _1
@@ -276,13 +257,11 @@ extension T8: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
     public typealias RawRepresentation = T2<T4<A, B, C, D>, T4<E, F, G, H>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T4(_0, _1, _2, _3), T4(_4, _5, _6, _7)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T8(
             A(from: rep._0._0._0),
@@ -309,7 +288,6 @@ public struct T9<A, B, C, D, E, F, G, H, I> {
     public let _8: I
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E, _ _5: F, _ _6: G, _ _7: H, _ _8: I) {
         self._0 = _0
         self._1 = _1
@@ -327,13 +305,11 @@ extension T9: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: G
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, I>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), _8).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T9(
             A(from: rep._0._0._0._0),
@@ -362,7 +338,6 @@ public struct T10<A, B, C, D, E, F, G, H, I, J> {
     public let _9: J
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(_ _0: A, _ _1: B, _ _2: C, _ _3: D, _ _4: E, _ _5: F, _ _6: G, _ _7: H, _ _8: I, _ _9: J) {
         self._0 = _0
         self._1 = _1
@@ -383,13 +358,11 @@ extension T10: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T2<I, J>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T2(_8, _9)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T10(
             A(from: rep._0._0._0._0),
@@ -420,7 +393,6 @@ public struct T11<A, B, C, D, E, F, G, H, I, J, K> {
     public let _10: K
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -454,13 +426,11 @@ extension T11: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T3<I, J, K>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T3(_8, _9, _10)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T11(
             A(from: rep._0._0._0._0),
@@ -493,7 +463,6 @@ public struct T12<A, B, C, D, E, F, G, H, I, J, K, L> {
     public let _11: L
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -529,13 +498,11 @@ extension T12: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T4<I, J, K, L>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T4(_8, _9, _10, _11)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T12(
             A(from: rep._0._0._0._0),
@@ -570,7 +537,6 @@ public struct T13<A, B, C, D, E, F, G, H, I, J, K, L, M> {
     public let _12: M
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -608,13 +574,11 @@ extension T13: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T5<I, J, K, L, M>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T5(_8, _9, _10, _11, _12)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T13(
             A(from: rep._0._0._0._0),
@@ -651,7 +615,6 @@ public struct T14<A, B, C, D, E, F, G, H, I, J, K, L, M, N> {
     public let _13: N
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -691,13 +654,11 @@ extension T14: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T6<I, J, K, L, M, N>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T6(_8, _9, _10, _11, _12, _13)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T14(
             A(from: rep._0._0._0._0),
@@ -736,7 +697,6 @@ public struct T15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> {
     public let _14: O
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -778,13 +738,11 @@ extension T15: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T7<I, J, K, L, M, N, O>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T7(_8, _9, _10, _11, _12, _13, _14)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T15(
             A(from: rep._0._0._0._0),
@@ -825,7 +783,6 @@ public struct T16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> {
     public let _15: P
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(
         _ _0: A,
         _ _1: B,
@@ -869,13 +826,11 @@ extension T16: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     public typealias RawRepresentation = T2<T8<A, B, C, D, E, F, G, H>, T8<I, J, K, L, M, N, O, P>>.RawRepresentation
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Self.RawRepresentation {
         T2(T8(_0, _1, _2, _3, _4, _5, _6, _7), T8(_8, _9, _10, _11, _12, _13, _14, _15)).rawRepresentation
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = T16(
             A(from: rep._0._0._0._0),

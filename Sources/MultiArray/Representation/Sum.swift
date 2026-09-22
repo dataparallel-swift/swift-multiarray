@@ -26,7 +26,6 @@ extension Sum: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Sum<A.RawRepresentation, B.RawRepresentation>
 
     @inlinable
-    @_alwaysEmitIntoClient
     public var rawRepresentation: Sum<A.RawRepresentation, B.RawRepresentation> {
         switch self {
             case let .lhs(left): .lhs(left.rawRepresentation)
@@ -35,7 +34,6 @@ extension Sum: Generic where A: Generic, B: Generic {
     }
 
     @inlinable
-    @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) {
         self = switch rep {
             case let .lhs(left): .lhs(A(from: left))
