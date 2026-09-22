@@ -14,6 +14,7 @@ swiftformat --cache ignore \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
+  "${ROOT_DIR}/Fixtures" \
   "${ROOT_DIR}/Benchmarks" \
   "${ROOT_DIR}/Snippets" \
   "$@"

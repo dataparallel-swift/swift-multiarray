@@ -45,3 +45,9 @@ documentation:
   image: swift:6.3.3-noble
   script:
     - scripts/build-docs.sh
+
+sendability:
+  stage: test
+  image: swift:6.3.3-noble
+  script:
+    - scripts/check-sendability.sh

@@ -21,6 +21,7 @@ Linux containers are the authoritative build environment:
 scripts/build-linux.sh
 scripts/test-linux.sh
 scripts/check-vectorization.sh
+scripts/check-sendability.sh
 scripts/preflight.sh
 ```
 

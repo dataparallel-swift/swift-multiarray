@@ -20,6 +20,8 @@ public struct Unit {
     public init() {}
 }
 
+extension Unit: Sendable {}
+
 extension Unit: Generic {
     public typealias RawRepresentation = Self
 }
