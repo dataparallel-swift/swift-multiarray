@@ -88,8 +88,31 @@ extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRep
     }
 }
 
+/// Derives `Generic` for a struct or raw-value enum.
+///
+/// Structs are represented by their stored, explicitly typed properties. For
+/// generic structs, put the `Generic` constraints on the struct declaration
+/// itself. Raw-value enums use `RawValueRepresentation<Self>` and cannot have
+/// associated values. Because macros cannot resolve types, the first inherited
+/// type is treated as a possible raw type; protocol-only inheritance is rejected
+/// later by the compiler. The complete conformance is emitted in an extension
+/// so the struct retains its synthesized memberwise initializer. Public
+/// conversion witnesses are `@inlinable` only when every encoded field is
+/// public or usable from inline code. A nested type cannot be `private` because
+/// its generated conformance extension is file-scoped; use `fileprivate` instead.
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
+
+/// Wraps a mutable stored property in `Box` while exposing its original type.
+///
+/// Use this inside an `@Generic` struct when a field's type is not itself
+/// `Generic`. The macro creates a `_name: Box<T>` backing field and transparent
+/// accessors. Initializers without a property default must initialize that
+/// backing field directly. Accessor macros cannot be applied to `let`; use an
+/// explicit `Box<T>` property for immutable fields.
+@attached(accessor, names: named(get), named(set))
+@attached(peer, names: prefixed(_))
+public macro Box() = #externalMacro(module: "MultiArrayMacros", type: "BoxPropertyMacro")
 
 // Primal, fixed size types
 extension Int8: Generic {}
@@ -186,7 +209,7 @@ public extension SIMD where Scalar: Generic {
 public struct Unit {
     @inlinable
     @_alwaysEmitIntoClient
-    init() {}
+    public init() {}
 }
 
 extension Unit: Generic {
@@ -207,6 +230,10 @@ public struct Box<Element> {
 
 extension Box: Generic {
     public typealias RawRepresentation = Self
+}
+
+extension Box: Equatable where Element: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool { lhs.unbox == rhs.unbox }
 }
 
 // Products: encode multiple arguments to constructors

@@ -28,6 +28,7 @@ let package = Package(
         .macro(
             name: "MultiArrayMacros",
             dependencies: [
+                .product(name: "SwiftDiagnostics", package: "swift-syntax"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
@@ -38,6 +39,13 @@ let package = Package(
             name: "MultiArrayTests",
             dependencies: [
                 "MultiArray",
+            ]
+        ),
+        .testTarget(
+            name: "MultiArrayMacrosTests",
+            dependencies: [
+                "MultiArrayMacros",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
     ]
