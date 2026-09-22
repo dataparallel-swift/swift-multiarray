@@ -41,11 +41,51 @@ public protocol Generic {
 extension Generic where RawRepresentation == Self {
     @inlinable
     @_alwaysEmitIntoClient
-    public var rawRepresentation: Self { self }
+    public var rawRepresentation: RawRepresentation { self }
 
     @inlinable
     @_alwaysEmitIntoClient
     public init(from rep: RawRepresentation) { self = rep }
+}
+
+/// A storage representation that preserves the domain constraint of a
+/// `RawRepresentable` type while using its raw value as the physical layout.
+///
+/// This allows binary validation to distinguish a constrained raw-value field
+/// from an unconstrained scalar without encoding surface-type information.
+/// Use it as the representation of a raw-value type to obtain the default
+/// `Generic` witnesses:
+///
+/// ```swift
+/// extension Status: Generic {
+///     typealias RawRepresentation = RawValueRepresentation<Self>
+/// }
+/// ```
+public struct RawValueRepresentation<Value: RawRepresentable> {
+    @usableFromInline
+    internal let rawValue: Value.RawValue
+
+    @inlinable
+    internal init(unchecked rawValue: Value.RawValue) {
+        self.rawValue = rawValue
+    }
+}
+
+extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRepresentation<Self> {
+    @inlinable
+    @_alwaysEmitIntoClient
+    public var rawRepresentation: RawRepresentation {
+        RawValueRepresentation(unchecked: self.rawValue)
+    }
+
+    @inlinable
+    @_alwaysEmitIntoClient
+    public init(from rep: RawRepresentation) {
+        guard let value = Self(rawValue: rep.rawValue) else {
+            preconditionFailure("Invalid raw value for \(Self.self): \(rep.rawValue)")
+        }
+        self = value
+    }
 }
 
 @attached(extension, conformances: Generic, names: arbitrary)

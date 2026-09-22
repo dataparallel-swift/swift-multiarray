@@ -21,6 +21,8 @@ to and from that representation. Users can conform their own types by hand.
   than copied as raw bytes.
 - **`Product<A, B>`** pairs two `Generic` types; nested products represent
   multi-field structs.
+- **`RawValueRepresentation<T>`** preserves a `RawRepresentable` type's value
+  domain in the representation tree while storing only its raw value.
 - **`Sum<A, B>`** exists for enum-like types but has no `ArrayData` conformance (not yet stored in SoA).
 
 The module also ships conformances for `Date` (via `TimeInterval`) and `UUID`
@@ -48,7 +50,24 @@ memory within the SoA buffer. Key implementations:
 | `Unit` | `Void` | Zero-byte, all operations are no-ops |
 | `Box<T>` | `UnsafeMutablePointer<T>` | Manual init/deinit (ref-counted), no memcpy |
 | `Product<A, B>` | `(A.Buffer, B.Buffer)` | Recursive: reserves space for both A and B back-to-back |
+| `RawValueRepresentation<T>` | `T.RawValue.Buffer` | Delegates storage to the raw value while retaining `T` as type-level validation metadata |
 | `SIMD<N>` | `UnsafeMutablePointer<Self>` | Stored as atomic blobs, **not** flattened to SoA |
+
+## Binary snapshots and representation validation
+
+Binary type tags describe only the physical `RawRepresentation`, never the
+surface Swift type. Consequently a `UInt8` snapshot and a snapshot of a
+`UInt8`-backed enum have identical tags and layouts. This is intentional: the
+format is a representation-level memory snapshot rather than a nominal schema.
+
+`RawValueRepresentation<T>` prevents that choice from compromising safety. Its
+`BinaryArrayData` conformance delegates the type tag and buffer layout to
+`T.RawValue`, but validates each raw value with `T(rawValue:)` after the payload
+copy. `Product` composes this validation recursively, so a constrained enum
+nested inside a product is validated without help from the surface type or a
+macro. The decoder publishes the element count only after validation succeeds;
+an invalid value throws `BinaryMultiArrayError.invalidRawRepresentation` at the
+decode boundary.
 
 ## Storage Layout
 

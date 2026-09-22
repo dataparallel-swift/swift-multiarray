@@ -79,6 +79,44 @@ struct DataTests {
         }
     }
 
+    @Test
+    func rawRepresentableEnumRoundtrips() throws {
+        let original: MultiArray<Status> = [.off, .on, .unknown]
+        let encoded = original.encode()
+        #expect(encoded == MultiArray<UInt8>([0, 2, 255]).encode())
+
+        let decoded = try MultiArray<Status>(data: encoded)
+        #expect(decoded == original)
+    }
+
+    @Test
+    func rawRepresentableNewtypeRoundtrips() throws {
+        let original: MultiArray<Identifier> = [.init(rawValue: 0), .init(rawValue: 42), .init(rawValue: .max)]
+        let decoded = try MultiArray<Identifier>(data: original.encode())
+        #expect(decoded == original)
+    }
+
+    @Test
+    func rejectsInvalidRawRepresentableValue() throws {
+        let encoded = MultiArray<UInt8>([Status.off.rawValue, Status.on.rawValue, 42]).encode()
+
+        #expect(throws: BinaryMultiArrayError.invalidRawRepresentation(index: 2)) {
+            _ = try MultiArray<Status>(data: encoded)
+        }
+    }
+
+    @Test
+    func rejectsInvalidNestedRawRepresentableValue() throws {
+        let encoded = MultiArray([
+            Product(Status.off.rawValue, UInt16(10)),
+            Product(UInt8(42), UInt16(20)),
+        ]).encode()
+
+        #expect(throws: BinaryMultiArrayError.invalidRawRepresentation(index: 1)) {
+            _ = try MultiArray<StatusRecord>(data: encoded)
+        }
+    }
+
     @Suite
     struct RoundTripTests {
         @Suite

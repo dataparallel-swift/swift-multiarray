@@ -145,6 +145,9 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
             }
             self.arrayData.context.copyMemory(from: addr + offset, byteCount: expectedByteCount)
         }
+        if let index = Element.RawRepresentation.firstInvalidElement(in: self.arrayData.storage, count: count) {
+            throw BinaryMultiArrayError.invalidRawRepresentation(index: index)
+        }
         self.arrayData.count = count
     }
 }
@@ -153,6 +156,7 @@ public enum BinaryMultiArrayError: Error, Equatable, CustomStringConvertible {
     case badMagic
     case endianMismatch
     case storageUnavailable
+    case invalidRawRepresentation(index: Int)
     case overflow(UInt64)
     case unsupportedVersion(Int)
     case truncated(index: Int, required: Int, total: Int)
@@ -168,6 +172,8 @@ public enum BinaryMultiArrayError: Error, Equatable, CustomStringConvertible {
                 "Attempt to load data that was produced on a machine of different endian-ness. This is not supported."
             case .storageUnavailable:
                 "Unable to access the encoded Data's underlying storage."
+            case let .invalidRawRepresentation(index):
+                "Invalid raw representation for element at index \(index)."
             case let .overflow(value):
                 "Encoded value overflowed available Int range: \(value)"
             case let .unsupportedVersion(version):
@@ -226,9 +232,17 @@ public protocol BinaryArrayData: ArrayData {
 
     // Append the type tag into the Data buffer
     static func appendType(to data: inout Data)
+
+    /// Returns the first element whose representation cannot be reconstructed,
+    /// or `nil` when every representation is valid.
+    static func firstInvalidElement(in buffer: Buffer, count: Int) -> Int?
 }
 
 extension BinaryArrayData {
+    public static func firstInvalidElement(in _: Buffer, count _: Int) -> Int? {
+        nil
+    }
+
     static func verifyByte(expecting: UInt8, in data: Data, at offset: inout Int) throws {
         guard offset < data.count else {
             throw BinaryMultiArrayError.truncated(index: offset, required: 1, total: data.count)
@@ -378,6 +392,18 @@ extension Product: BinaryArrayData where A: BinaryArrayData, B: BinaryArrayData 
         data.append(Self.typeHead.rawValue)
         A.appendType(to: &data)
         B.appendType(to: &data)
+    }
+
+    public static func firstInvalidElement(in buffer: Buffer, count: Int) -> Int? {
+        switch (
+            A.firstInvalidElement(in: buffer.0, count: count),
+            B.firstInvalidElement(in: buffer.1, count: count)
+        ) {
+            case let (left?, nil): left
+            case let (nil, right?): right
+            case let (left?, right?): min(left, right)
+            case (nil, nil): nil
+        }
     }
 }
 
