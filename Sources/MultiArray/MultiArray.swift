@@ -44,8 +44,9 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// Create a new array containing the specified number of a single,
     /// repeating value.
     @inlinable
-    public init(repeating: Element, count: Int) {
-        self.init(count: count) { _ in repeating }
+    public init(repeating value: Element, count: Int) {
+        precondition(count >= 0)
+        self.arrayData = .init(repeating: value.rawRepresentation, count: count)
     }
 
     /// Create a new MultiArray by applying the given function to each index to
@@ -168,6 +169,15 @@ internal final class MultiArrayData<A: ArrayData> {
         self.context = context
         self.storage = A.reserve(capacity: source.count, from: &context)
         A.initialize(self.storage, from: source.storage, count: source.count)
+    }
+
+    @inlinable
+    init(repeating value: A, count: Int) {
+        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
+        self.count = count
+        self.context = context
+        self.storage = A.reserve(capacity: count, from: &context)
+        A.initialize(self.storage, repeating: value, count: count)
     }
 
     @inlinable
