@@ -49,8 +49,11 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
         self.arrayData = .init(repeating: value.rawRepresentation, count: count)
     }
 
+    // Swift 6.2 needs the body in the client to vectorize MultiArray.map;
+    // scripts/check-vectorization.sh enforces this cross-module contract.
     /// Create a new MultiArray by applying the given function to each index to
     /// produce each value.
+    @inline(__always)
     @inlinable
     public init<E: Error>(count: Int, with generator: (Int) throws(E) -> Element) throws(E) {
         try self.init(unsafeUninitializedCapacity: count) { buffer, initializedCount throws(E) in

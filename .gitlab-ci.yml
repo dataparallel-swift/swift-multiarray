@@ -34,3 +34,8 @@ include:
   #     token-email: ${SWIFT_DEPENDABOT_EMAIL}
   #     assignee-username: trevor@passivelogic.com
 
+vectorization:
+  stage: test
+  image: swift:6.3.3-noble
+  script:
+    - scripts/check-vectorization.sh

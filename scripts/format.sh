@@ -15,6 +15,7 @@ swiftformat --cache ignore \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
-  "${ROOT_DIR}/Benchmarks"
+  "${ROOT_DIR}/Benchmarks" \
+  "${ROOT_DIR}/Snippets"
 
 echo "format complete"

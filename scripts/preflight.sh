@@ -23,14 +23,16 @@ swiftlint --quiet --no-cache \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
-  "${ROOT_DIR}/Benchmarks"
+  "${ROOT_DIR}/Benchmarks" \
+  "${ROOT_DIR}/Snippets"
 
 printf 'preflight: checking formatting\n'
 swiftformat --lint --cache ignore \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
-  "${ROOT_DIR}/Benchmarks"
+  "${ROOT_DIR}/Benchmarks" \
+  "${ROOT_DIR}/Snippets"
 
 echo "preflight: checking shell syntax"
 while IFS= read -r script; do
