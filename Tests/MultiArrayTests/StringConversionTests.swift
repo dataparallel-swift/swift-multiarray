@@ -12,14 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extension MultiArray: CustomDebugStringConvertible {
-    public var debugDescription: String {
-        """
-        MultiArray<\(Element.self)> {
-            count: \(self.count)
-            encoding: \(Element.RawRepresentation.self)
-            values: [\(map { String(describing: $0) }.joined(separator: ", "))]
-        }
-        """
+import MultiArray
+import Testing
+
+@Suite
+struct StringConversionTests {
+    let array = MultiArray<Int8>([1, 2, 3])
+
+    @Test
+    func descriptionShowsAllValues() {
+        #expect(String(describing: array) == "MultiArray[1, 2, 3]")
+    }
+
+    @Test
+    func debugDescriptionShowsMetadataAndAllValues() {
+        #expect(
+            String(reflecting: array) == """
+            MultiArray<Int8> {
+                count: 3
+                encoding: Int8
+                values: [1, 2, 3]
+            }
+            """
+        )
     }
 }
