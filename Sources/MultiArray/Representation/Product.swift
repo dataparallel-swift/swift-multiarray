@@ -26,6 +26,8 @@ public struct Product<A, B> {
     }
 }
 
+extension Product: Sendable where A: Sendable, B: Sendable {}
+
 extension Product: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Product<A.RawRepresentation, B.RawRepresentation>
 
