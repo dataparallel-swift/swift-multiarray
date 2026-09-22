@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update the project's lint and formatting rules
 - Support SwiftSyntax releases from 600 through 603
+- Reorganize the test suite and expand coverage for empty arrays, Boolean fields, and large arrays
 
 ## [2.1.0] - 2025-12-16
 
