@@ -45,3 +45,9 @@ sendability:
   image: swift:6.4.0-noble
   script:
     - scripts/check-sendability.sh
+
+concurrency-signatures:
+  stage: test
+  image: swift:6.4.0-noble
+  script:
+    - scripts/check-concurrency-signatures.sh

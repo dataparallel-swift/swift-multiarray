@@ -15,6 +15,13 @@ The package's minimum tools version is Swift 6.0. CI builds and tests every
 minor compiler release from Swift 6.0 through 6.4. The deployment floors are
 macOS 10.15, iOS 12, tvOS 12, and watchOS 9.
 
+The standalone concurrency fixture additionally holds the planned async
+initialization signature stable under complete strict-concurrency checking and
+warnings as errors. New async public API is annotated
+`@available(macOS 10.15, iOS 13, tvOS 13, watchOS 9, *)`: Swift concurrency is
+not available at the retained iOS and tvOS package floors, while the macOS and
+watchOS package floors already suffice.
+
 ## The `Generic` Protocol
 
 `Generic` is an **open** protocol: it maps a type to an isomorphic

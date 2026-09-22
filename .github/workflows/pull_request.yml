@@ -35,6 +35,8 @@ jobs:
         run: scripts/check-vectorization.sh
       - name: Check Sendability
         run: scripts/check-sendability.sh
+      - name: Check Concurrency Signatures
+        run: scripts/check-concurrency-signatures.sh
 
   test-macos-26:
     name: Test macOS
