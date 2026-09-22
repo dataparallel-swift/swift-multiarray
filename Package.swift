@@ -10,7 +10,7 @@ let package = Package(
         .macOS(.v10_15),
         .iOS(.v12),
         .tvOS(.v12),
-        .watchOS(.v4),
+        .watchOS(.v9),
     ],
     products: [
         .library(name: "MultiArray", targets: ["MultiArray"]),

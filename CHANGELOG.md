@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change `init(unsafeUninitializedCapacity:initializingWith:)` to report the number of initialized elements, preventing undefined behaviour and leaks when initialization throws
 - Improve `init(repeating:count:)` by decomposing the repeated value only once
 - Remove redundant per-element platform integer layout assertions
+- **Breaking:** Raise the minimum watchOS deployment target from 4 to 9, the oldest target supported by Swift 6.4
 
 ### Fixed
 

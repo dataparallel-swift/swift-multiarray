@@ -9,6 +9,12 @@ describes *how the decomposed pieces are stored*.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData
 ```
 
+## Compiler and platform support
+
+The package's minimum tools version is Swift 6.0. CI builds and tests every
+minor compiler release from Swift 6.0 through 6.4. The deployment floors are
+macOS 10.15, iOS 12, tvOS 12, and watchOS 9.
+
 ## The `Generic` Protocol
 
 `Generic` is an **open** protocol: it maps a type to an isomorphic

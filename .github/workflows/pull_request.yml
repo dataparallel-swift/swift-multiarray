@@ -16,12 +16,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - swift: "6.0"
+            image: swift:6.0-jammy
           - swift: "6.1"
             image: swift:6.1-jammy
           - swift: "6.2"
             image: swift:6.2.4-jammy
           - swift: "6.3"
             image: swift:6.3.3-noble
+          - swift: "6.4"
+            image: swift:6.4.0-noble
     container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v4

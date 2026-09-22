@@ -36,12 +36,12 @@ include:
 
 vectorization:
   stage: test
-  image: swift:6.3.3-noble
+  image: swift:6.4.0-noble
   script:
     - scripts/check-vectorization.sh
 
 sendability:
   stage: test
-  image: swift:6.3.3-noble
+  image: swift:6.4.0-noble
   script:
     - scripts/check-sendability.sh
