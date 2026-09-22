@@ -22,6 +22,7 @@ scripts/build-linux.sh
 scripts/test-linux.sh
 scripts/check-vectorization.sh
 scripts/check-sendability.sh
+scripts/check-concurrency-signatures.sh
 scripts/preflight.sh
 ```
 
