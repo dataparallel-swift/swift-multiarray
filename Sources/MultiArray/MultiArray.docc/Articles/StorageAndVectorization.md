@@ -35,11 +35,10 @@ The following model and transform are compiled as part of the package tests:
 
 The project's `scripts/check-vectorization.sh` also compiles this exact source
 as a release client and inspects only the `move` function's LLVM IR. Local
-ARM64 Linux runs verify Swift 6.1 through 6.4, while CI verifies Swift 6.1
-through 6.3 on x86-64 Linux. Each contains a vector loop with matching float
-loads, additions, and stores. The chosen vector width is target-dependent: the
-same loop may, for example, use four-wide operations on ARM64 and two-wide
-operations on an x86-64 CI runner.
+ARM64 Linux runs and x86-64 Linux CI verify Swift 6.0 through 6.4. Each contains
+a vector loop with matching float loads, additions, and stores. The chosen
+vector width is target-dependent: the same loop may, for example, use four-wide
+operations on ARM64 and two-wide operations on x86-64.
 
 LLVM also emits a scalar remainder and a runtime-alias fallback. Their presence
 is expected and does not mean that the primary loop failed to vectorize.

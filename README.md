@@ -25,6 +25,9 @@ scripts/check-sendability.sh
 scripts/preflight.sh
 ```
 
+The package supports Swift 6.0 through 6.4. CI tests every minor release in
+that range with complete strict concurrency checking.
+
 Build or serve the documentation with DocC tools and the containerized Swift
 build:
 
