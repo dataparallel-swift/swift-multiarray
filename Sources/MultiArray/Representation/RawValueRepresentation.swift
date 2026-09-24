@@ -102,6 +102,20 @@ extension RawValueRepresentation: ArrayData where Value.RawValue: Generic, Value
     }
 }
 
+extension RawValueRepresentation: PartialInitializationArrayData
+    where Value.RawValue: Generic, Value.RawValue.RawRepresentation: PartialInitializationArrayData
+{
+    @inlinable
+    public static var requiresInitializationTracking: Bool {
+        Value.RawValue.RawRepresentation.requiresInitializationTracking
+    }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        Value.RawValue.RawRepresentation.deinitialize(arrayData, at: index)
+    }
+}
+
 extension RawValueRepresentation: BinaryArrayData where Value.RawValue: Generic, Value.RawValue.RawRepresentation: BinaryArrayData {
     public static func appendPayload(from storage: Buffer, count: Int, to data: inout Data, offset: inout Int) {
         Value.RawValue.RawRepresentation.appendPayload(from: storage, count: count, to: &data, offset: &offset)

@@ -100,6 +100,19 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     }
 }
 
+extension Product: PartialInitializationArrayData where A: PartialInitializationArrayData, B: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool {
+        A.requiresInitializationTracking || B.requiresInitializationTracking
+    }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        A.deinitialize(arrayData.0, at: index)
+        B.deinitialize(arrayData.1, at: index)
+    }
+}
+
 extension Product: BinaryArrayData where A: BinaryArrayData, B: BinaryArrayData {
     public static var type: Type {
         .product(lhs: A.type, rhs: B.type)
