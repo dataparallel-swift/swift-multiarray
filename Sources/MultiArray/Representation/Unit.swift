@@ -59,6 +59,14 @@ extension Unit: ArrayData {
     }
 }
 
+extension Unit: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool { false }
+
+    @inlinable
+    public static func deinitialize(_: Buffer, at _: Int) { /* no-op */ }
+}
+
 extension Unit: BinaryArrayData {
     public static var type: Type { .unit }
     public static var typeHead: TypeHead { .unit }

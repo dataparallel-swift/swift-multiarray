@@ -42,6 +42,30 @@ public protocol ArrayData {
     static func rawSize(capacity: Int, from offset: Int) -> Int?
 }
 
+/// An opt-in refinement for representations whose initialized elements may be
+/// scattered rather than forming the prefix required by `ArrayData.deinitialize`.
+///
+/// A future arbitrary-order initializer can omit its per-element flags when
+/// `requiresInitializationTracking` is false. Conformers returning `false` must
+/// be safe to abandon partially initialized storage without destruction.
+/// Conformers returning `true` must destroy exactly one initialized logical
+/// element in `deinitialize(_:at:)`.
+///
+/// Flags for tracked elements must be separate bytes, not packed bits: writes
+/// to flags for distinct indices must not race through a shared byte.
+public protocol PartialInitializationArrayData: ArrayData {
+    static var requiresInitializationTracking: Bool { get }
+    static func deinitialize(_ arrayData: Buffer, at index: Int)
+}
+
+extension PartialInitializationArrayData where Buffer == UnsafeMutablePointer<Self> {
+    @inlinable
+    public static var requiresInitializationTracking: Bool { false }
+
+    @inlinable
+    public static func deinitialize(_: Buffer, at _: Int) { /* no-op */ }
+}
+
 // This instance is intended for values which are trivially copyable without
 // references (i.e. machine types)
 extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
@@ -112,6 +136,25 @@ extension Float16: ArrayData {}
 extension Float32: ArrayData {}
 extension Float64: ArrayData {}
 
+extension Int8: PartialInitializationArrayData {}
+extension Int16: PartialInitializationArrayData {}
+extension Int32: PartialInitializationArrayData {}
+extension Int64: PartialInitializationArrayData {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+extension Int128: PartialInitializationArrayData {}
+extension UInt8: PartialInitializationArrayData {}
+extension UInt16: PartialInitializationArrayData {}
+extension UInt32: PartialInitializationArrayData {}
+extension UInt64: PartialInitializationArrayData {}
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+extension UInt128: PartialInitializationArrayData {}
+#if arch(arm64)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+extension Float16: PartialInitializationArrayData {}
+#endif
+extension Float32: PartialInitializationArrayData {}
+extension Float64: PartialInitializationArrayData {}
+
 /// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD2: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 /// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
@@ -126,6 +169,14 @@ extension SIMD16: ArrayData where Scalar: Generic, Scalar.RawRepresentation: Arr
 extension SIMD32: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 /// Stores each SIMD vector as one atomic field rather than decomposing its lanes into separate buffers.
 extension SIMD64: ArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+
+extension SIMD2: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD3: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD4: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD8: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD16: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD32: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
+extension SIMD64: PartialInitializationArrayData where Scalar: Generic, Scalar.RawRepresentation: ArrayData {}
 
 public extension FixedWidthInteger {
     typealias Buffer = UnsafeMutablePointer<Self>

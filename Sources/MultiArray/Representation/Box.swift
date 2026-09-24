@@ -85,5 +85,17 @@ extension Box: ArrayData {
     }
 }
 
+extension Box: PartialInitializationArrayData {
+    // Even a seemingly trivial payload is kept conservative: Box accepts any
+    // Element, and its storage may own references that need destruction.
+    @inlinable
+    public static var requiresInitializationTracking: Bool { true }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        (arrayData + index).deinitialize(count: 1)
+    }
+}
+
 // Box deliberately has no BinaryArrayData conformance: its payload may include
 // pointers or other process-local state.

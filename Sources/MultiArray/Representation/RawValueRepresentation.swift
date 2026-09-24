@@ -100,6 +100,18 @@ extension RawValueRepresentation: ArrayData where Value.RawValue: ArrayData {
     }
 }
 
+extension RawValueRepresentation: PartialInitializationArrayData where Value.RawValue: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool {
+        Value.RawValue.requiresInitializationTracking
+    }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        Value.RawValue.deinitialize(arrayData, at: index)
+    }
+}
+
 extension RawValueRepresentation: BinaryArrayData where Value.RawValue: BinaryArrayData {
     public static func appendPayload(from storage: Buffer, count: Int, to data: inout Data, offset: inout Int) {
         Value.RawValue.appendPayload(from: storage, count: count, to: &data, offset: &offset)

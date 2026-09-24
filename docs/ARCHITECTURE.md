@@ -243,3 +243,19 @@ that count to destroy exactly the initialized elements. Reporting too few
 elements leaks their resources. The reported count is checked against
 `0...capacity`, and a count outside that range traps, including when the closure
 throws.
+
+`PartialInitializationArrayData` is a separate, opt-in refinement of
+`ArrayData` for future arbitrary-order construction. It provides
+`deinitialize(_:at:)`, which destroys one initialized logical element, and
+`requiresInitializationTracking`, which tells that constructor whether cleanup
+needs per-element flags. Machine scalars, SIMD, and `Unit` need no flags;
+`Box` always does, and `Product` needs them when either child does. A
+`RawValueRepresentation` inherits the trait from its raw value. This leaves
+existing external `ArrayData` conformances source-compatible but does not
+grant them the arbitrary-order initializer automatically.
+
+The prefix initializer above still uses its count and prefix cleanup; the new
+refinement does not change its contract. For scattered initialization, tracked
+elements will use one byte per logical index. Packed bits would make writes to
+flags for adjacent indices modify the same byte, creating a race even when
+the elements themselves occupy disjoint storage.
