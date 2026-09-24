@@ -12,6 +12,7 @@ case "$(uname -s)" in
       --package-path "${ROOT_DIR}" \
       --scratch-path "${SWIFT_SCRATCH_PATH}" \
       --configuration "${SWIFT_BUILD_CONFIGURATION}" \
+      --disable-xctest \
       "$@"
     ;;
   Darwin) ;;
