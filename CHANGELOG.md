@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
 - Improve `init(repeating:count:)` by decomposing the repeated value only once
 - Remove redundant per-element platform integer layout assertions
+- **Breaking:** Raise the minimum watchOS deployment target from 4 to 9, the oldest target supported by Swift 6.4
 
 ### Fixed
 
