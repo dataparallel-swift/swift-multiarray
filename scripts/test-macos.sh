@@ -15,4 +15,5 @@ exec swift test \
   --package-path "${ROOT_DIR}" \
   --scratch-path "${SCRATCH_PATH}" \
   --configuration "${SWIFT_BUILD_CONFIGURATION}" \
+  --disable-xctest \
   "$@"
