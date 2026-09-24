@@ -83,7 +83,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-readonly SWIFT_IMAGE="${SWIFT_IMAGE:-docker.io/library/swift:6.3.3-noble}"
+readonly SWIFT_IMAGE="${SWIFT_IMAGE:-docker.io/library/swift:6.4.0-noble}"
 readonly SWIFT_SCRATCH_PATH="${SWIFT_SCRATCH_PATH:-/workspace/.build}"
 readonly CONTAINER_HOSTNAME="${CONTAINER_HOSTNAME:-swift-multiarray-sendability}"
 
