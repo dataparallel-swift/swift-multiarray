@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Checked conditional `Sendable` conformances for the representation constructors
 - DocC guides with compiler-checked examples and a cross-version automatic-vectorization regression check
 - A Swift 6.0 through 6.4 strict-concurrency signature compatibility check
+- An opt-in `PartialInitializationArrayData` refinement for per-index cleanup of scattered initialization
 
 ### Changed
 
