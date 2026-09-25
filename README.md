@@ -23,8 +23,8 @@ scripts/test-linux.sh
 scripts/check-vectorization.sh
 scripts/check-sendability.sh
 scripts/check-concurrency-signatures.sh
-scripts/test-asan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|boxDoesNotLeak'
-scripts/test-tsan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|boxDoesNotLeak'
+scripts/test-asan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|PartialInitializationArrayDataTests|AsyncInitializationTests|MultiArrayBufferTests|boxDoesNotLeak'
+scripts/test-tsan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|PartialInitializationArrayDataTests|AsyncInitializationTests|MultiArrayBufferTests|boxDoesNotLeak'
 scripts/preflight.sh
 ```
 

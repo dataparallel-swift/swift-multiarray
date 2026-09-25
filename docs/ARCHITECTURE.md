@@ -198,6 +198,17 @@ isolation domains for concurrent reads; separately owned copies can detach and
 mutate concurrently. This does not permit concurrent access to the same mutable
 variable, nor sharing an unsafe mutable buffer view between tasks.
 
+`MultiArrayBuffer` is the separate fixed-size, reference-semantic scratch
+owner. It holds one `MultiArrayData` allocation directly and performs checked
+indexed reads and in-place writes without CoW or uniqueness checks. The owner
+has no `Sendable` conformance. A concurrency adapter may retain it inside a
+small audited unchecked-sendable endpoint only when its scheduler guarantees
+that concurrent writes and read/write pairs use disjoint logical indices;
+overlapping access requires synchronization. Retaining the owner, rather than
+only its raw pointers, keeps every field allocation and boxed value alive for
+the endpoint's lifetime. No zero-copy conversion to or from `MultiArray` is
+provided while aliases can exist.
+
 ### Transferable representations
 
 Transferability has two independent type-level conditions. A transferable

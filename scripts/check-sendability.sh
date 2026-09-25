@@ -72,6 +72,7 @@ case "$(uname -s)" in
 
     check_rejected NonSendableElement Sendable
     check_rejected NonSendableRepresentation Sendable
+    check_rejected NonSendableBuffer Sendable
 
     echo "sendability check passed"
     exit 0

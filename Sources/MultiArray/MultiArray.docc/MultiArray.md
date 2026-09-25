@@ -28,6 +28,7 @@ element type conforms to ``Generic``.
 ### Collections
 
 - ``MultiArray``
+- ``MultiArrayBuffer``
 
 ### Define elements
 

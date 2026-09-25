@@ -16,6 +16,11 @@ construction initializers. The old name, `UninitializedMultiArrayData`, remains
 available as a deprecated alias. See <doc:ConstructingArrays> for the distinct
 synchronous-prefix and asynchronous arbitrary-order prefix contracts.
 
+``MultiArrayBuffer`` is separate reusable scratch storage. It has reference
+semantics and writes in place, unlike the copy-on-write `MultiArray`. An
+adapter that shares it across isolation domains must guarantee disjoint-index
+access or synchronize overlapping operations.
+
 ## Advanced protocols and helpers
 
 ``ArrayData`` defines storage operations for raw representations. To store a new
