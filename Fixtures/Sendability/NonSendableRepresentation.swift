@@ -28,5 +28,5 @@ struct SendableSurface: Generic, Sendable {
 }
 
 func checkNonSendableRepresentationIsRejected() {
-    requireTransferableRepresentation(SendableSurface.self)
+    requireSendable(MultiArray<SendableSurface>.self)
 }
