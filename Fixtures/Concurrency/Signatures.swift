@@ -12,43 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-protocol FixtureGeneric {
-    associatedtype RawRepresentation
-}
+import MultiArray
 
-struct FixtureUnsafeUninitializedBuffer<Element> where Element: FixtureGeneric {}
-
-extension FixtureUnsafeUninitializedBuffer: @unchecked Sendable
-    where Element: Sendable, Element.RawRepresentation: Sendable {}
-
-struct FixtureMultiArray<Element> where Element: FixtureGeneric {
-    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 9, *)
-    init<Failure: Error>(
-        unsafeUninitializedCapacity _: Int,
-        initializingWith body: sending(
-            FixtureUnsafeUninitializedBuffer<Element>
-        ) async throws(Failure) -> Void
-    ) async throws(Failure) {
-        try await body(FixtureUnsafeUninitializedBuffer())
-    }
-}
-
-enum FixtureError: Error {
+private enum FixtureError: Error {
     case childFailed
 }
 
-struct FixtureElement: FixtureGeneric, Sendable {
-    typealias RawRepresentation = Int
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 9, *)
-func exerciseConcurrencySignatures() async throws(FixtureError) {
-    _ = try await FixtureMultiArray<FixtureElement>(unsafeUninitializedCapacity: 4) { buffer throws(FixtureError) in
+private func exerciseConcurrencySignatures() async throws(FixtureError) {
+    _ = try await MultiArray<Int32>(unsafeUninitializedCapacity: 4) { buffer, count async throws(FixtureError) in
         do {
             try await withThrowingTaskGroup(of: Void.self) { group in
-                for _ in 0 ..< 4 {
+                for index in 0 ..< buffer.count {
                     group.addTask {
-                        _ = buffer
+                        buffer.initializeElement(at: index, to: Int32(index))
                     }
                 }
                 try await group.waitForAll()
@@ -57,5 +33,6 @@ func exerciseConcurrencySignatures() async throws(FixtureError) {
         catch {
             throw .childFailed
         }
+        count = buffer.count
     }
 }

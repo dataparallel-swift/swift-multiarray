@@ -45,7 +45,7 @@ public protocol ArrayData {
 /// An opt-in refinement for representations whose initialized elements may be
 /// scattered rather than forming the prefix required by `ArrayData.deinitialize`.
 ///
-/// A future arbitrary-order initializer can omit its per-element flags when
+/// The arbitrary-order initializer can omit its per-element flags when
 /// `requiresInitializationTracking` is false. Conformers returning `false` must
 /// be safe to abandon partially initialized storage without destruction.
 /// Conformers returning `true` must destroy exactly one initialized logical
