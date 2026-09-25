@@ -19,10 +19,10 @@
 /// `MultiArray` has value semantics: copies initially share storage, and an
 /// indexed mutation copies the storage before modifying it when necessary.
 ///
-/// `MultiArray` is not `Sendable`. Copy-on-write provides value semantics for
-/// ordinary use, but it is not a synchronization mechanism. Keep an instance
-/// within a single concurrency isolation domain; concurrent mutation, or a
-/// mutation concurrent with a read, is unsupported.
+/// A `MultiArray` can cross isolation domains when both its element and raw
+/// representation are `Sendable`. Copies may be read concurrently or mutated
+/// independently: mutation detaches shared storage first. This does not make
+/// concurrent access to the same mutable variable safe.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     internal var arrayData: MultiArrayData<Element.RawRepresentation>
@@ -126,6 +126,13 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
         self.arrayData = arrayData
     }
 }
+
+// Storage contains raw pointers, so the compiler cannot check this conformance.
+// Published storage has a fixed initialized extent; indexed writes detach it
+// before mutation. Custom Generic and ArrayData conformances must also honor
+// their documented purity and ownership requirements.
+extension MultiArray: @unchecked Sendable
+    where Element: Sendable, Element.RawRepresentation: Sendable {}
 
 /// A view of uninitialized storage using the surface element type.
 ///

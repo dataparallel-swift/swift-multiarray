@@ -75,6 +75,11 @@ func checkPositiveSendability() {
     requireTransferableRepresentation(T3<Int32, Box<String>, Status>.self)
     requireTransferableRepresentation(Status.self)
     requireTransferableRepresentation(MacroLabeled.self)
+    requireSendable(MultiArray<Int32>.self)
+    requireSendable(MultiArray<Pair>.self)
+    requireSendable(MultiArray<Labeled>.self)
+    requireSendable(MultiArray<Status>.self)
+    requireSendable(MultiArray<MacroLabeled>.self)
     requireSendable(RawValueRepresentation<Status>.self)
     requireSendable(Sum<Int32, String>.self)
 }

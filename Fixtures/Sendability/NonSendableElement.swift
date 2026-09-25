@@ -33,5 +33,5 @@ struct NonSendableElement: Generic {
 }
 
 func checkNonSendableElementIsRejected() {
-    requireTransferableRepresentation(NonSendableElement.self)
+    requireSendable(MultiArray<NonSendableElement>.self)
 }

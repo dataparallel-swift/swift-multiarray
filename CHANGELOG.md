@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@Box` for transparently storing mutable non-`Generic` properties, including default values, module-qualified attributes, and escaped property names; stored properties without an explicit type annotation are diagnosed, and an invalid `@Box` declaration does not cascade into `@Generic` errors
 - `Box: Equatable` conformance
 - Checked conditional `Sendable` conformances for the representation constructors
+- Conditional `Sendable` conformance for immutable `MultiArray` snapshots with sendable elements and raw representations
 - DocC guides with compiler-checked examples and a cross-version automatic-vectorization regression check
 - A Swift 6.0 through 6.4 strict-concurrency signature compatibility check
 - An opt-in `PartialInitializationArrayData` refinement for per-index cleanup of scattered initialization

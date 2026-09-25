@@ -192,13 +192,16 @@ capacity after partial-prefix construction. Detaching shared storage copies
 only the initialized fields into a new allocation with `capacity == count`.
 Mutation of uniquely owned storage retains its existing capacity.
 
-`MultiArray` does not conform to `Sendable`; an instance must remain within one
-concurrency isolation domain.
+`MultiArray` conditionally conforms to `@unchecked Sendable` when both its
+element and raw representation are `Sendable`. An immutable snapshot can cross
+isolation domains for concurrent reads; separately owned copies can detach and
+mutate concurrently. This does not permit concurrent access to the same mutable
+variable, nor sharing an unsafe mutable buffer view between tasks.
 
 ### Transferable representations
 
-Transferability has two independent type-level conditions. A future
-transferable `MultiArray<Element>` requires both `Element: Sendable` and
+Transferability has two independent type-level conditions. A transferable
+`MultiArray<Element>` requires both `Element: Sendable` and
 `Element.RawRepresentation: Sendable`. The first covers the value reconstructed
 and returned by a read; the second covers the logical values held in the stored
 representation. Requiring only the surface element is insufficient because the
