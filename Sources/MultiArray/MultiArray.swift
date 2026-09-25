@@ -55,8 +55,8 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inline(__always)
     @inlinable
-    public init<E: Error>(count: Int, with generator: (Int) throws(E) -> Element) throws(E) {
-        try self.init(unsafeUninitializedCapacity: count) { buffer, initializedCount throws(E) in
+    public init<Failure: Error>(count: Int, with generator: (Int) throws(Failure) -> Element) throws(Failure) {
+        try self.init(unsafeUninitializedCapacity: count) { buffer, initializedCount throws(Failure) in
             var initialized = 0
             // This must also update the count when the generator throws:
             // MultiArrayData.deinit deinitializes exactly this many elements.
@@ -108,43 +108,69 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     ///   - initializingWith: A closure that initializes the buffer and reports
     ///     the number of initialized elements.
     @inlinable
-    public init<E: Error>(
+    public init<Failure: Error>(
         unsafeUninitializedCapacity count: Int,
-        initializingWith: (_ buffer: inout UninitializedMultiArrayData<Element>, _ initializedCount: inout Int) throws(E) -> Void
-    ) throws(E) {
+        initializingWith: (_ buffer: UnsafeUninitializedMultiArrayBuffer<Element>, _ initializedCount: inout Int) throws(Failure)
+            -> Void
+    ) throws(Failure) {
         precondition(count >= 0)
         let arrayData = MultiArrayData<Element.RawRepresentation>(unsafeUninitializedCapacity: count)
-        var buffer = UninitializedMultiArrayData<Element>(arrayData.storage)
+        let buffer = UnsafeUninitializedMultiArrayBuffer<Element>(arrayData.storage, count: count, flags: nil)
         defer {
             precondition(
                 arrayData.count >= 0 && arrayData.count <= count,
                 "MultiArray initialized count must be between zero and capacity"
             )
         }
-        try initializingWith(&buffer, &arrayData.count)
+        try initializingWith(buffer, &arrayData.count)
         self.arrayData = arrayData
     }
 }
 
 /// A view of uninitialized storage using the surface element type.
 ///
-/// Only the prefix reported through `initializedCount` may be initialized;
-/// update that count even if the initialization closure throws.
-public struct UninitializedMultiArrayData<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
+/// On success, initialize exactly the prefix reported through `initializedCount`.
+/// The synchronous initializer also requires that prefix count on throw; the
+/// asynchronous initializer uses per-index tracking to clean up scattered writes
+/// on throw. Follow the enclosing initializer's lifetime and concurrency contract.
+public struct UnsafeUninitializedMultiArrayBuffer<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     let storage: Element.RawRepresentation.Buffer
 
     @usableFromInline
-    init(_ storage: Element.RawRepresentation.Buffer) {
+    let flags: UnsafeMutablePointer<UInt8>?
+
+    /// The number of slots in the uninitialized allocation.
+    public let count: Int
+
+    @usableFromInline
+    init(_ storage: Element.RawRepresentation.Buffer, count: Int, flags: UnsafeMutablePointer<UInt8>?) {
         self.storage = storage
+        self.count = count
+        self.flags = flags
     }
 
-    /// Initialises the element at the given `index` to the given `value`
+    /// Initializes one slot. The caller must not initialize the same slot
+    /// twice or use this view after the initializer's body completes.
+    /// Tracked duplicate initialization is asserted only in debug builds and
+    /// only without a race.
     @inlinable
     public func initializeElement(at index: Int, to value: consuming Element) {
+        precondition(index >= 0 && index < self.count, "MultiArray initialization index out of bounds")
+        if let flags = self.flags {
+            assert(flags[index] == 0, "MultiArray element initialized more than once")
+        }
         Element.RawRepresentation.initialize(self.storage, at: index, to: value.rawRepresentation)
+        self.flags?[index] = 1
     }
 }
+
+@available(*, deprecated, renamed: "UnsafeUninitializedMultiArrayBuffer")
+public typealias UninitializedMultiArrayData<Element: Generic> = UnsafeUninitializedMultiArrayBuffer<Element>
+    where Element.RawRepresentation: ArrayData
+
+extension UnsafeUninitializedMultiArrayBuffer: @unchecked Sendable
+    where Element: Sendable, Element.RawRepresentation: Sendable {}
 
 // TODO: It would be better if this is generic over the underlying storage
 // method. Then, we can specialise it for raw pointers on the heap (as we have
