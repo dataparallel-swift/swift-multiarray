@@ -39,6 +39,14 @@ and is printed in the test output. CI runs the sanitizer suites on Linux x86-64.
 The package supports Swift 6.0 through 6.4. CI tests every minor release in
 that range with complete strict concurrency checking.
 
+On macOS, use the native build and test entry points when checking that
+platform:
+
+```sh
+scripts/build-macos.sh
+scripts/test-macos.sh
+```
+
 Build or serve the documentation with DocC tools and the containerized Swift
 build:
 

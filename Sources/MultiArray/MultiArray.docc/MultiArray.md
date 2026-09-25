@@ -21,6 +21,7 @@ element type conforms to ``Generic``.
 ### Getting started
 
 - <doc:RepresentingCustomTypes>
+- <doc:ConstructingArrays>
 - <doc:StorageAndVectorization>
 - <doc:SupportAPI>
 
@@ -59,3 +60,8 @@ element type conforms to ``Generic``.
 - ``T14``
 - ``T15``
 - ``T16``
+
+### Unsafe construction
+
+- ``UnsafeUninitializedMultiArrayBuffer``
+- ``PartialInitializationArrayData``
