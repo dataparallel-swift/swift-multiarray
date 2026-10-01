@@ -56,6 +56,7 @@ memory within the SoA buffer. Key implementations:
 MultiArray<Element>
   └── arrayData: MultiArrayData<Element.RawRepresentation>  (reference-counted class)
         ├── count: Int
+        ├── capacity: Int  (determines field offsets)
         ├── context: UnsafeMutableRawPointer  (single heap allocation)
         └── storage: A.Buffer  (tuple of typed pointers into context)
 
@@ -68,6 +69,15 @@ must agree: `rawSize(capacity:from:)` accumulates alignment padding and strides
 to size the allocation up front, then `reserve(capacity:from:)` walks it again
 to carve out the aligned regions and hand back the tuple of typed pointers.
 Padding between regions is zero-initialized.
+
+Capacity determines the allocation layout; count determines the initialized
+prefix in every field, collection bounds, and destruction. Partial-prefix
+construction retains its original allocation without normalization or copying.
+Binary snapshots always use the count-sized layout: when count equals capacity,
+encoding copies the allocation directly; otherwise `BinaryArrayData.appendPayload`
+recursively copies only each field's initialized prefix and emits zero alignment
+padding. Equal initialized representations produce identical snapshots regardless
+of unused capacity. Decoding allocates exact-count storage.
 
 Sizing recursively follows the same scalar-field layout as reservation, including
 nested products. `rawSize` returns `nil` for negative capacities or offsets,
