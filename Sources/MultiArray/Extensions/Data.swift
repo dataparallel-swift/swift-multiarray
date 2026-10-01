@@ -35,7 +35,10 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
     /// This is statically restricted to types which we can encode fully in the
     /// struct-of-array representation (i.e. no internal pointers, no internal
     /// padding, etc.) and so serialisation and deserialisation are able to
-    /// efficiently copy the underlying buffer in one go. Note that this means
+    /// efficiently copy the underlying buffer in one go when count equals
+    /// capacity. Otherwise, only the initialized prefix of each field is copied
+    /// into the count-sized snapshot layout, with zeroed alignment padding.
+    /// Unused capacity is never encoded. Note that this means
     /// we do not do any endian conversion: you will get an error if you try to
     /// decode the buffer on a machine with a different endianess than which it
     /// was encoded. Thus, this is more a "memory snapshot" rather than a
@@ -102,7 +105,19 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         Element.RawRepresentation.appendType(to: &data)
 
         // Payload (payloadSize bytes)
-        data.append(self.arrayData.context.assumingMemoryBound(to: UInt8.self), count: layout.payload)
+        if self.count == self.arrayData.capacity {
+            data.append(self.arrayData.context.assumingMemoryBound(to: UInt8.self), count: layout.payload)
+        }
+        else {
+            var offset = 0
+            Element.RawRepresentation.appendPayload(
+                from: self.arrayData.storage,
+                count: self.count,
+                to: &data,
+                offset: &offset
+            )
+            precondition(offset == layout.payload, "Binary payload copy must agree with rawSize")
+        }
 
         return data
     }
@@ -248,6 +263,12 @@ public protocol BinaryArrayData: ArrayData {
 
     // Append the type tag into the Data buffer
     static func appendType(to data: inout Data)
+
+    /// Appends only initialized field prefixes in the count-sized layout.
+    /// `offset` is relative to the payload start, not the start of `data`.
+    /// Implementations must match `rawSize`, zero alignment gaps, and never
+    /// read unused capacity. Products recursively append their children.
+    static func appendPayload(from storage: Buffer, count: Int, to data: inout Data, offset: inout Int)
 }
 
 extension BinaryArrayData {
