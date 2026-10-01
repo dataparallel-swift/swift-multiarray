@@ -252,10 +252,7 @@ public protocol BinaryArrayData: ArrayData {
 
 extension BinaryArrayData {
     static func verifyByte(expecting: UInt8, in data: Data, at offset: inout Int) throws {
-        guard offset < data.count else {
-            throw BinaryMultiArrayError.truncated(index: offset, required: 1, total: data.count)
-        }
-        let found = data[offset]
+        let found: UInt8 = try data.load(fromByteOffset: offset)
         guard expecting == found else {
             throw BinaryMultiArrayError.typeMismatch(expected: expecting, actual: found)
         }
