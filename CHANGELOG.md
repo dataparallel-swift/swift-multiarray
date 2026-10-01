@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Avoid force-unwrapping unavailable `Data` storage during binary decoding
 - Reject negative or overflowing storage layouts before allocation and enforce the 16-byte maximum field alignment
+- Decode binary snapshots correctly from nonzero-index `Data` slices
 
 ## [2.1.0] - 2025-12-16
 
