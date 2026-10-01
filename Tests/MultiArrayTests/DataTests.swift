@@ -29,13 +29,14 @@ struct DataTests {
         }
     }
 
-    @Test
-    func failVersion() throws {
+    @Test(arguments: [UInt8(1), UInt8(99)])
+    func failVersion(version: UInt8) throws {
         let array: MultiArray<Int> = [1, 2, 3]
         var encoded = array.encode()
-        encoded[4] = 99
+        #expect(encoded[4] == 2)
+        encoded[4] = version
 
-        #expect(throws: BinaryMultiArrayError.unsupportedVersion(99)) {
+        #expect(throws: BinaryMultiArrayError.unsupportedVersion(Int(version))) {
             _ = try MultiArray<Int>(data: encoded)
         }
     }
@@ -76,6 +77,18 @@ struct DataTests {
 
         #expect(throws: BinaryMultiArrayError.typeMismatch(expected: 0x35, actual: 0x15)) {
             _ = try MultiArray<Float32>(data: encoded)
+        }
+    }
+
+    @Test
+    func failCountWhoseLayoutOverflows() throws {
+        var encoded = MultiArray<Int64>().encode()
+        var count = UInt64(Int.max)
+        withUnsafeBytes(of: &count) { bytes in
+            encoded.replaceSubrange(8 ..< 16, with: bytes)
+        }
+        #expect(throws: BinaryMultiArrayError.overflow(count)) {
+            _ = try MultiArray<Int64>(data: encoded)
         }
     }
 
