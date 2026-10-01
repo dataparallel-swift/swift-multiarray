@@ -126,13 +126,13 @@ struct MultiArrayTests {
         }
 
         @Test
-        func rawSizeDoesNotOverflow() {
-            let size = Int64.RawRepresentation.rawSize(capacity: 1_000_000, from: 0)
+        func rawSizeDoesNotOverflow() throws {
+            let size = try #require(Int64.RawRepresentation.rawSize(capacity: 1_000_000, from: 0))
             #expect(size > 0)
             #expect(size <= Int.max)
 
-            let productSize = Product<Int64, Double>.RawRepresentation
-                .rawSize(capacity: 1_000_000, from: 0)
+            let productSize = try #require(Product<Int64, Double>.RawRepresentation
+                .rawSize(capacity: 1_000_000, from: 0))
             #expect(productSize > 0)
             #expect(productSize <= Int.max)
         }

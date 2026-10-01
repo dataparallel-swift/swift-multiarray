@@ -69,6 +69,12 @@ to size the allocation up front, then `reserve(capacity:from:)` walks it again
 to carve out the aligned regions and hand back the tuple of typed pointers.
 Padding between regions is zero-initialized.
 
+Sizing recursively follows the same scalar-field layout as reservation, including
+nested products. `rawSize` returns `nil` for negative capacities or offsets,
+overflowing arithmetic, or field alignment above the allocation's 16-byte
+alignment. Allocation validates the complete layout before reserving fields;
+binary decoding reports an overflowing layout as `BinaryMultiArrayError.overflow`.
+
 ## Mutation and ownership
 
 `MultiArrayData` is a class, so assigning a `MultiArray` shares the buffer.

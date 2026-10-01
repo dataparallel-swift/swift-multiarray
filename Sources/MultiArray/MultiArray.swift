@@ -142,7 +142,11 @@ internal final class MultiArrayData<A: ArrayData> {
 
     @inlinable
     init(unsafeUninitializedCapacity count: Int) {
-        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
+        precondition(count >= 0, "MultiArray capacity must be nonnegative")
+        guard let byteCount = A.rawSize(capacity: count, from: 0) else {
+            preconditionFailure("MultiArray capacity cannot be represented by its storage layout")
+        }
+        var context = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: multiArrayAllocationAlignment)
         self.count = 0
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
