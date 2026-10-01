@@ -129,6 +129,11 @@ public struct UninitializedMultiArrayData<Element> where Element: Generic, Eleme
 //
 @usableFromInline
 internal final class MultiArrayData<A: ArrayData> {
+    /// Determines the allocation layout and maximum storage capacity
+    @usableFromInline
+    let capacity: Int
+
+    /// The number of elements actually initialised
     @usableFromInline
     var count: Int
 
@@ -148,6 +153,7 @@ internal final class MultiArrayData<A: ArrayData> {
         }
         var context = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: multiArrayAllocationAlignment)
         self.count = 0
+        self.capacity = count
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
     }

@@ -408,6 +408,39 @@ struct MultiArrayTests {
         // Leaving the do scope should drop arr and release everything it owns
         #expect(Tracked.liveCount == 0)
     }
+
+    @Test
+    func successfulPartialPrefixRetainsAndReleasesBoxedElements() {
+        final class Tracked {
+            let value: Int
+            init(_ value: Int) { self.value = value }
+        }
+        weak var first: Tracked?
+        weak var second: Tracked?
+        weak var replacement: Tracked?
+        do {
+            var array = MultiArray<Product<UInt8, Box<Tracked>>>(unsafeUninitializedCapacity: 16) { buffer, count in
+                let a = Tracked(111)
+                let b = Tracked(222)
+                first = a
+                second = b
+                buffer.initializeElement(at: 0, to: Product(1, Box(a)))
+                buffer.initializeElement(at: 1, to: Product(2, Box(b)))
+                count = 2
+            }
+            #expect(first?.value == 111)
+            #expect(second?.value == 222)
+            #expect(array.count == 2)
+            let value = Tracked(333)
+            replacement = value
+            array[1] = Product(3, Box(value))
+            #expect(second == nil)
+            #expect(array[1]._1.unbox.value == 333)
+        }
+        #expect(first == nil)
+        #expect(second == nil)
+        #expect(replacement == nil)
+    }
 }
 
 func roundtripTest<T: Randomizable & Equatable & Generic>(_: T.Type, iterations: Int = 1000)

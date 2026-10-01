@@ -20,12 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change `init(unsafeUninitializedCapacity:initializingWith:)` to report the initialized prefix for cleanup when the closure throws; counts outside `0...capacity` now trap
 - **Breaking:** Make `ArrayData.rawSize(capacity:from:)` return an optional checked size
 - **Breaking:** Nested-product binary snapshots no longer contain unused opaque-struct padding
+- **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
 
 ### Fixed
 
 - Avoid force-unwrapping unavailable `Data` storage during binary decoding
 - Reject negative or overflowing storage layouts before allocation and enforce the 16-byte maximum field alignment
 - Decode binary snapshots correctly from nonzero-index `Data` slices
+- Encode only initialized field prefixes after partial-capacity construction, producing the same binary snapshot as exact-capacity construction
 
 ## [2.1.0] - 2025-12-16
 
