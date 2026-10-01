@@ -18,10 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support SwiftSyntax releases from 600 through 603
 - Reorganize the test suite and expand coverage for empty arrays, Boolean fields, and large arrays
 - **Breaking:** Change `init(unsafeUninitializedCapacity:initializingWith:)` to report the initialized prefix for cleanup when the closure throws; counts outside `0...capacity` now trap
+- **Breaking:** Make `ArrayData.rawSize(capacity:from:)` return an optional checked size
+- **Breaking:** Nested-product binary snapshots no longer contain unused opaque-struct padding
 
 ### Fixed
 
 - Avoid force-unwrapping unavailable `Data` storage during binary decoding
+- Reject negative or overflowing storage layouts before allocation and enforce the 16-byte maximum field alignment
 
 ## [2.1.0] - 2025-12-16
 

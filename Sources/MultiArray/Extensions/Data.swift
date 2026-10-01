@@ -14,6 +14,19 @@
 
 import Foundation
 
+private func binaryLayoutSize<A: ArrayData>(
+    for _: A.Type,
+    capacity: Int,
+    headerSize: Int,
+    typeSize: Int
+) -> (payload: Int, total: Int)? {
+    guard let payloadSize = A.rawSize(capacity: capacity, from: 0) else { return nil }
+    let (metadataSize, metadataOverflow) = headerSize.addingReportingOverflow(typeSize)
+    let (totalSize, totalOverflow) = metadataSize.addingReportingOverflow(payloadSize)
+    guard !metadataOverflow, !totalOverflow else { return nil }
+    return (payloadSize, totalSize)
+}
+
 extension MultiArray where Element.RawRepresentation: BinaryArrayData {
     private static var magic: UInt32 { 0x4D_41_52_52 } // MARR swiftformat:disable:this numberFormatting
 
@@ -69,8 +82,13 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         let version: UInt8 = 1
         let headerSize = 18
         let typeSize = Element.RawRepresentation.type.encodedSize()
-        let payloadSize = Element.RawRepresentation.rawSize(capacity: self.count, from: 0)
-        var data = Data(capacity: headerSize + typeSize + payloadSize)
+        guard let layout = binaryLayoutSize(
+            for: Element.RawRepresentation.self,
+            capacity: self.count,
+            headerSize: headerSize,
+            typeSize: typeSize
+        ) else { preconditionFailure("MultiArray encoding size is not representable") }
+        var data = Data(capacity: layout.total)
 
         // Header (18 bytes)
         data.append(UInt32(MultiArray.magic))
@@ -84,7 +102,7 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         Element.RawRepresentation.appendType(to: &data)
 
         // Payload (payloadSize bytes)
-        data.append(self.arrayData.context.assumingMemoryBound(to: UInt8.self), count: payloadSize)
+        data.append(self.arrayData.context.assumingMemoryBound(to: UInt8.self), count: layout.payload)
 
         return data
     }
@@ -121,10 +139,14 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         let count = Int(count64)
 
         // Ensure we have the correct number of bytes
-        let expectedByteCount = Element.RawRepresentation.rawSize(capacity: count, from: 0)
-        let expectedSize = expectedHeaderSize + expectedTypeSize + expectedByteCount
-        guard data.count == expectedSize else {
-            throw BinaryMultiArrayError.sizeMismatch(expected: expectedSize, actual: data.count)
+        guard let layout = binaryLayoutSize(
+            for: Element.RawRepresentation.self,
+            capacity: count,
+            headerSize: expectedHeaderSize,
+            typeSize: expectedTypeSize
+        ) else { throw BinaryMultiArrayError.overflow(count64) }
+        guard data.count == layout.total else {
+            throw BinaryMultiArrayError.sizeMismatch(expected: layout.total, actual: data.count)
         }
 
         // Decode the (variable sized) type tag
@@ -143,7 +165,7 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
             guard let addr = ptr.baseAddress else {
                 throw BinaryMultiArrayError.storageUnavailable
             }
-            self.arrayData.context.copyMemory(from: addr + offset, byteCount: expectedByteCount)
+            self.arrayData.context.copyMemory(from: addr + offset, byteCount: layout.payload)
         }
         self.arrayData.count = count
     }
@@ -200,7 +222,7 @@ extension Data {
     @inlinable
     func load<T: FixedWidthInteger>(fromByteOffset offset: Int) throws -> T {
         let required = MemoryLayout<T>.size
-        guard offset + required <= self.count else {
+        guard offset >= 0, required <= self.count, offset <= self.count - required else {
             throw BinaryMultiArrayError.truncated(index: offset, required: required, total: self.count)
         }
         return self.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset, as: T.self) }

@@ -25,7 +25,9 @@ public protocol ArrayData {
     static func write(_ arrayData: Buffer, at index: Int, to value: Self)
 
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Buffer
-    static func rawSize(capacity: Int, from offset: Int) -> Int
+    /// Returns the end offset, or `nil` for invalid capacity, offset,
+    /// alignment, or size arithmetic.
+    static func rawSize(capacity: Int, from offset: Int) -> Int?
 }
 
 // This instance is intended for values which are trivially copyable without
@@ -63,7 +65,7 @@ extension ArrayData where Buffer == UnsafeMutablePointer<Self> {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawSize(capacity: Int, from offset: Int) -> Int {
+    public static func rawSize(capacity: Int, from offset: Int) -> Int? {
         getRawSize(for: Self.self, count: capacity, from: offset)
     }
 }
@@ -130,12 +132,17 @@ extension Unit: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func reserve(capacity _: Int, from _: inout UnsafeMutableRawPointer) -> Self.Buffer { () }
+    public static func reserve(capacity: Int, from _: inout UnsafeMutableRawPointer) -> Self.Buffer {
+        precondition(capacity >= 0, "MultiArray capacity must be nonnegative")
+    }
 
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawSize(capacity _: Int, from offset: Int) -> Int { offset }
+    public static func rawSize(capacity: Int, from offset: Int) -> Int? {
+        guard capacity >= 0, offset >= 0 else { return nil }
+        return offset
+    }
 }
 
 // This instance is necessary for any values that are not trivially copyable,
@@ -182,7 +189,7 @@ extension Box: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawSize(capacity: Int, from offset: Int) -> Int {
+    public static func rawSize(capacity: Int, from offset: Int) -> Int? {
         getRawSize(for: Element.self, count: capacity, from: offset)
     }
 }
@@ -233,8 +240,9 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     @inlinable
     // @inline(__always)
     // @_alwaysEmitIntoClient
-    public static func rawSize(capacity: Int, from offset: Int) -> Int {
-        getRawSize(for: B.self, count: capacity, from: getRawSize(for: A.self, count: capacity, from: offset))
+    public static func rawSize(capacity: Int, from offset: Int) -> Int? {
+        guard let aEnd = A.rawSize(capacity: capacity, from: offset) else { return nil }
+        return B.rawSize(capacity: capacity, from: aEnd)
     }
 }
 
@@ -253,11 +261,34 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
 // @inline(__always)
 // @_alwaysEmitIntoClient
 @usableFromInline
-internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int {
-    let padding = -offset & (MemoryLayout<T>.alignment - 1)
-    let begin = offset + padding
-    let end = begin + count * MemoryLayout<T>.stride
-    return end
+internal let multiArrayAllocationAlignment = 16
+
+@usableFromInline
+internal struct RawFieldLayout {
+    @usableFromInline
+    let begin: Int
+
+    @usableFromInline
+    let end: Int
+}
+
+@usableFromInline
+internal func getRawFieldLayout<T>(for _: T.Type, count: Int, from offset: Int) -> RawFieldLayout? {
+    let alignment = MemoryLayout<T>.alignment
+    guard count >= 0,
+          offset >= 0,
+          alignment <= multiArrayAllocationAlignment else { return nil }
+    let padding = (alignment - (offset & (alignment - 1))) & (alignment - 1)
+    let (begin, beginOverflow) = offset.addingReportingOverflow(padding)
+    let (byteCount, byteCountOverflow) = count.multipliedReportingOverflow(by: MemoryLayout<T>.stride)
+    let (end, endOverflow) = begin.addingReportingOverflow(byteCount)
+    guard !beginOverflow, !byteCountOverflow, !endOverflow else { return nil }
+    return RawFieldLayout(begin: begin, end: end)
+}
+
+@usableFromInline
+internal func getRawSize<T>(for type: T.Type, count: Int, from offset: Int) -> Int? {
+    getRawFieldLayout(for: type, count: count, from: offset)?.end
 }
 
 // @inlinable
@@ -265,9 +296,18 @@ internal func getRawSize<T>(for _: T.Type, count: Int, from offset: Int) -> Int 
 // @_alwaysEmitIntoClient
 @usableFromInline
 internal func reserveCapacity<T>(for type: T.Type, count: Int, from context: inout UnsafeMutableRawPointer) -> UnsafeMutablePointer<T> {
-    let begin = context.alignedUp(for: type)
-    let end = begin + count * MemoryLayout<T>.stride
-    let pad = begin - context
+    precondition(
+        MemoryLayout<T>.alignment <= multiArrayAllocationAlignment,
+        "MultiArray field alignment \(MemoryLayout<T>.alignment) exceeds allocation alignment \(multiArrayAllocationAlignment)"
+    )
+    let remainder = Int(bitPattern: context) & (MemoryLayout<T>.alignment - 1)
+    guard let layout = getRawFieldLayout(for: type, count: count, from: remainder) else {
+        preconditionFailure("MultiArray layout requires a nonnegative count with representable size arithmetic")
+    }
+    let pad = layout.begin - remainder
+    let byteCount = layout.end - layout.begin
+    let begin = context + pad
+    let end = begin + byteCount
 
     // Initialise any gaps between the struct-of-array chunks
     if pad > 0 {

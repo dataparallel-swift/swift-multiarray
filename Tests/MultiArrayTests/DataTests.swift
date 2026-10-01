@@ -79,6 +79,18 @@ struct DataTests {
         }
     }
 
+    @Test
+    func failCountWhoseLayoutOverflows() throws {
+        var encoded = MultiArray<Int64>().encode()
+        var count = UInt64(Int.max)
+        withUnsafeBytes(of: &count) { bytes in
+            encoded.replaceSubrange(8 ..< 16, with: bytes)
+        }
+        #expect(throws: BinaryMultiArrayError.overflow(count)) {
+            _ = try MultiArray<Int64>(data: encoded)
+        }
+    }
+
     @Suite
     struct RoundTripTests {
         @Suite
