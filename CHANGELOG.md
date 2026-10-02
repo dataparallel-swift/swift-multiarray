@@ -2,10 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [next]
+## [Unreleased]
 
 ### Added
 
@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update the project's lint and formatting rules
 - Support SwiftSyntax releases from 600 through 603
 - Reorganize the test suite and expand coverage for empty arrays, Boolean fields, and large arrays
+- **Breaking:** Change `init(unsafeUninitializedCapacity:initializingWith:)` to report the initialized prefix for cleanup when the closure throws; counts outside `0...capacity` now trap
+- **Breaking:** Make `ArrayData.rawSize(capacity:from:)` return an optional checked size
+- **Breaking:** Nested-product binary snapshots no longer contain unused opaque-struct padding
+- **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
+
+### Fixed
+
+- Avoid force-unwrapping unavailable `Data` storage during binary decoding
+- Reject negative or overflowing storage layouts before allocation and enforce the 16-byte maximum field alignment
+- Decode binary snapshots correctly from nonzero-index `Data` slices
+- Encode only initialized field prefixes after partial-capacity construction, producing the same binary snapshot as exact-capacity construction
 
 ## [2.1.0] - 2025-12-16
 
@@ -60,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
-[next]: https://github.com/dataparallel-swift/swift-multiarray/compare/2.1.0...HEAD
+[Unreleased]: https://github.com/dataparallel-swift/swift-multiarray/compare/2.1.0...HEAD
 [2.1.0]: https://github.com/dataparallel-swift/swift-multiarray/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/dataparallel-swift/swift-multiarray/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/dataparallel-swift/swift-multiarray/releases/tag/1.0.0

@@ -126,13 +126,13 @@ struct MultiArrayTests {
         }
 
         @Test
-        func rawSizeDoesNotOverflow() {
-            let size = Int64.RawRepresentation.rawSize(capacity: 1_000_000, from: 0)
+        func rawSizeDoesNotOverflow() throws {
+            let size = try #require(Int64.RawRepresentation.rawSize(capacity: 1_000_000, from: 0))
             #expect(size > 0)
             #expect(size <= Int.max)
 
-            let productSize = Product<Int64, Double>.RawRepresentation
-                .rawSize(capacity: 1_000_000, from: 0)
+            let productSize = try #require(Product<Int64, Double>.RawRepresentation
+                .rawSize(capacity: 1_000_000, from: 0))
             #expect(productSize > 0)
             #expect(productSize <= Int.max)
         }
@@ -191,6 +191,113 @@ struct MultiArrayTests {
             #expect(ma[0].x == 99.0)
             #expect(ma[1].active == false)
             #expect(ma[1].x == 2.0)
+        }
+    }
+
+    // MARK: - Throwing init error path tests
+
+    // These tests verify that when the throwing init partially initializes
+    // elements and then throws, exactly the initialized elements are
+    // deinitialized -- no leaks (liveCount > 0) and no UB (crash from
+    // deinitializing garbage memory).
+
+    @Suite
+    struct ThrowingInitTests {
+        struct PartialInitError: Error {}
+
+        #if compiler(>=6.2)
+        @Test
+        func synchronousInitializerRejectsOverreportedCount() async {
+            let result = await #expect(processExitsWith: .failure, observing: [\.standardErrorContent]) {
+                _ = MultiArray<Int>(unsafeUninitializedCapacity: 1) { buffer, reportedCount in
+                    buffer.initializeElement(at: 0, to: 42)
+                    reportedCount = 2
+                }
+            }
+            #if DEBUG
+            let output = String(bytes: result?.standardErrorContent ?? [], encoding: .utf8) ?? ""
+            #expect(output.contains("MultiArray initialized count must be between zero and capacity"))
+            #else
+            // Optimized preconditions may trap without emitting their message.
+            _ = result
+            #endif
+        }
+
+        @Test
+        func synchronousInitializerRejectsNegativeCount() async {
+            let result = await #expect(processExitsWith: .failure, observing: [\.standardErrorContent]) {
+                _ = MultiArray<Int>(unsafeUninitializedCapacity: 1) { buffer, reportedCount in
+                    buffer.initializeElement(at: 0, to: 42)
+                    reportedCount = -1
+                }
+            }
+            #if DEBUG
+            let output = String(bytes: result?.standardErrorContent ?? [], encoding: .utf8) ?? ""
+            #expect(output.contains("MultiArray initialized count must be between zero and capacity"))
+            #else
+            _ = result
+            #endif
+        }
+        #endif
+
+        @Test
+        func throwingInitWithTrivialType() throws {
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Int>(unsafeUninitializedCapacity: 10) { buffer, _ in
+                    buffer.initializeElement(at: 0, to: 1)
+                    buffer.initializeElement(at: 1, to: 2)
+                    throw PartialInitError()
+                }
+            }
+        }
+
+        @Test
+        func throwingInitWithBoxType() throws {
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Box<String>>(unsafeUninitializedCapacity: 10) { buffer, initializedCount in
+                    buffer.initializeElement(at: 0, to: Box("hello"))
+                    buffer.initializeElement(at: 1, to: Box("world"))
+                    initializedCount = 2
+                    throw PartialInitError()
+                }
+            }
+        }
+
+        @Test
+        func partialInitDeinitializesExactlyInitializedElements() throws {
+            // Tracked class counts live instances to verify no leaks
+            final class Tracked {
+                nonisolated(unsafe) static var liveCount: Int = 0
+
+                init() { Tracked.liveCount += 1 }
+                deinit { Tracked.liveCount -= 1 }
+            }
+
+            Tracked.liveCount = 0
+            let toInitialize = 3
+
+            #expect(throws: PartialInitError.self) {
+                _ = try MultiArray<Box<Tracked>>(unsafeUninitializedCapacity: 10) { buffer, initializedCount in
+                    var initialized = 0
+                    defer { initializedCount = initialized }
+
+                    for i in 0 ..< toInitialize {
+                        buffer.initializeElement(at: i, to: Box(Tracked()))
+                        initialized += 1
+                    }
+
+                    // At this point we've initialized `toInitialize` elements
+                    #expect(Tracked.liveCount == toInitialize)
+
+                    throw PartialInitError()
+                }
+            }
+
+            // After the throw, the local arrayData is deallocated. Its deinit
+            // should deinitialize exactly `toInitialize` elements. If it
+            // deinitializes fewer, liveCount > 0 (leak). If it deinitializes
+            // more, we get UB/crash from calling deinit on garbage memory.
+            #expect(Tracked.liveCount == 0, "all \(toInitialize) initialized elements should be deinitialized after throw")
         }
     }
 
@@ -300,6 +407,39 @@ struct MultiArrayTests {
 
         // Leaving the do scope should drop arr and release everything it owns
         #expect(Tracked.liveCount == 0)
+    }
+
+    @Test
+    func successfulPartialPrefixRetainsAndReleasesBoxedElements() {
+        final class Tracked {
+            let value: Int
+            init(_ value: Int) { self.value = value }
+        }
+        weak var first: Tracked?
+        weak var second: Tracked?
+        weak var replacement: Tracked?
+        do {
+            var array = MultiArray<Product<UInt8, Box<Tracked>>>(unsafeUninitializedCapacity: 16) { buffer, count in
+                let a = Tracked(111)
+                let b = Tracked(222)
+                first = a
+                second = b
+                buffer.initializeElement(at: 0, to: Product(1, Box(a)))
+                buffer.initializeElement(at: 1, to: Product(2, Box(b)))
+                count = 2
+            }
+            #expect(first?.value == 111)
+            #expect(second?.value == 222)
+            #expect(array.count == 2)
+            let value = Tracked(333)
+            replacement = value
+            array[1] = Product(3, Box(value))
+            #expect(second == nil)
+            #expect(array[1]._1.unbox.value == 333)
+        }
+        #expect(first == nil)
+        #expect(second == nil)
+        #expect(replacement == nil)
     }
 }
 

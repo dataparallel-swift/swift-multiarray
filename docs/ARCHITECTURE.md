@@ -56,6 +56,7 @@ memory within the SoA buffer. Key implementations:
 MultiArray<Element>
   └── arrayData: MultiArrayData<Element.RawRepresentation>  (reference-counted class)
         ├── count: Int
+        ├── capacity: Int  (determines field offsets)
         ├── context: UnsafeMutableRawPointer  (single heap allocation)
         └── storage: A.Buffer  (tuple of typed pointers into context)
 
@@ -69,6 +70,21 @@ to size the allocation up front, then `reserve(capacity:from:)` walks it again
 to carve out the aligned regions and hand back the tuple of typed pointers.
 Padding between regions is zero-initialized.
 
+Capacity determines the allocation layout; count determines the initialized
+prefix in every field, collection bounds, and destruction. Partial-prefix
+construction retains its original allocation without normalization or copying.
+Binary snapshots always use the count-sized layout: when count equals capacity,
+encoding copies the allocation directly; otherwise `BinaryArrayData.appendPayload`
+recursively copies only each field's initialized prefix and emits zero alignment
+padding. Equal initialized representations produce identical snapshots regardless
+of unused capacity. Decoding allocates exact-count storage.
+
+Sizing recursively follows the same scalar-field layout as reservation, including
+nested products. `rawSize` returns `nil` for negative capacities or offsets,
+overflowing arithmetic, or field alignment above the allocation's 16-byte
+alignment. Allocation validates the complete layout before reserving fields;
+binary decoding reports an overflowing layout as `BinaryMultiArrayError.overflow`.
+
 ## Mutation and ownership
 
 `MultiArrayData` is a class, so assigning a `MultiArray` shares the buffer.
@@ -81,6 +97,10 @@ storage; copy-on-write has not yet been implemented. Mutating one of two copied
 `init(unsafeUninitializedCapacity:initializingWith:)` supports bulk construction
 by handing its closure an `UninitializedMultiArrayData<Element>` view over the
 raw storage, typed in terms of the surface `Element` rather than its
-`RawRepresentation`. The closure must initialize every element before returning.
-The current buffer view does not track how many elements were initialized, so
-returning or throwing after partial initialization is not safe.
+`RawRepresentation`. The closure initializes a prefix of that storage and
+reports its length through an `inout` count. It must report the initialized
+prefix even when it throws, normally with `defer`; `MultiArrayData.deinit` uses
+that count to destroy exactly the initialized elements. Reporting too few
+elements leaks their resources. The reported count is checked against
+`0...capacity`, and a count outside that range traps, including when the closure
+throws.
