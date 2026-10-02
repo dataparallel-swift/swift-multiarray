@@ -16,11 +16,10 @@ extension MultiArray {
     /// Returns an array containing the results of mapping the given closure
     /// over the array's elements.
     ///
-    /// Shadows the implementation provided by Sequence.map with a
-    /// MultiArray-specific overload that returns MultiArray<B> instead of [B].
-    /// The implementation provided through Sequence does not optimise (inline?)
-    /// enough to enable vectorisation. Note that this overload will only be
-    /// picked up when the type is statically known to be MultiArray.
+    /// Returns `MultiArray<B>` rather than `[B]` when the receiver is statically
+    /// known to be `MultiArray`. The transform runs once per element, in order;
+    /// if it throws, initialized result elements are destroyed and its error
+    /// is rethrown.
     @inlinable
     public func map<B: Generic>(_ transform: (Self.Element) throws -> B) rethrows -> MultiArray<B> {
         // Keep the source buffer loop-invariant. Swift 6.2 and 6.3 otherwise

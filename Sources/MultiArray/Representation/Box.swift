@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Constant: Encode boxed/constant data (i.e. don't do anything with it; will
-// not be encoded into a struct-of-array representation).
+/// Stores an ordinary Swift value as one field without decomposing it.
+///
+/// Copying a box copies its payload using the payload's normal value or reference
+/// semantics. Boxed fields are not eligible for native binary snapshots.
 public struct Box<Element> {
+    /// The stored value.
     public let unbox: Element
 
+    /// Wraps a value for field-wise storage.
     @inlinable
     public init(_ value: Element) {
         self.unbox = value
@@ -35,7 +39,7 @@ extension Box: Equatable where Element: Equatable {
 }
 
 // This instance is necessary for any values that are not trivially copyable,
-// i.e. class-based types (e.g. String) that are owned by somebody else, but we
+// including values with reference-backed storage that we
 // need to keep a strong reference to. In this case initialisation and
 // de-initialisation of the raw underlying buffer are important!
 extension Box: ArrayData {

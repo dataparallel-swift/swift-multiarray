@@ -30,58 +30,19 @@ private func binaryLayoutSize<A: ArrayData>(
 extension MultiArray where Element.RawRepresentation: BinaryArrayData {
     private static var magic: UInt32 { 0x4D_41_52_52 } // MARR swiftformat:disable:this numberFormatting
 
-    /// Dump the given array into a Data buffer.
+    /// Encodes initialized elements as a native binary snapshot.
     ///
-    /// This is statically restricted to types which we can encode fully in the
-    /// struct-of-array representation (i.e. no internal pointers, no internal
-    /// padding, etc.) and so serialisation and deserialisation are able to
-    /// efficiently copy the underlying buffer in one go when count equals
-    /// capacity. Otherwise, only the initialized prefix of each field is copied
-    /// into the count-sized snapshot layout, with zeroed alignment padding.
-    /// Unused capacity is never encoded. Note that this means
-    /// we do not do any endian conversion: you will get an error if you try to
-    /// decode the buffer on a machine with a different endianess than which it
-    /// was encoded. Thus, this is more a "memory snapshot" rather than a
-    /// serialised encoding, because the layout of the data in the buffer is
-    /// dependent on the host machine, library internals, etc. etc.. Still,
-    /// that's what enables it to be fast, for when you know what you are doing.
-    /// Caveat emptor. If this makes you anxious or you need a stable wire
-    /// format, consider using the Codable instances instead, e.g.:
+    /// Unused capacity is omitted. Tags describe the raw representation, not the
+    /// surface element type. Snapshots round-trip within the same major library
+    /// version on ABI-compatible, same-endian platforms; they are not a stable
+    /// wire format and have no payload checksum. Use element-wise `Codable`
+    /// encoding when an application-defined interchange format is needed.
     ///
-    /// > let encoded = try JSONEncoder().encode(array) // slow as all hell
-    ///
-    /// Rather than this method:
-    ///
-    /// > let encoded = array.encode() // footguns!
-    ///
-    /// Caveats aside, examples this functionality is useful for include:
-    ///  - cache snapshots
-    ///  - same-machine IPC
-    ///  - (temporary) persistent storage where you control both ends
-    ///
-    /// This encoding is only guaranteed to round-trip within the same major
-    /// version of this library, on ABI-compatible platforms.
-    ///
-    /// Currently this does not checksum the payload, but that could be added as
-    /// an optional addition.
-    ///
-    /// The format of the underlying data is:
-    ///
-    ///   Bytes   Description
-    ///         ┌──────────────
-    ///   0...3 │ magic (0x4d415252)
-    ///       4 │ encoding version
-    ///       5 │ flags
-    ///   6...7 │ reserved
-    ///  8...15 │ array count
-    /// 16...17 │ size of type encoding (t)
-    ///   18... │ type encoding
-    ///         ┆
-    /// 18+t... │ payload
-    ///         ┆
-    ///         └──────────────
-    ///
+    /// Traps if the encoded layout size is not representable.
+    /// See <doc:Serialization> for examples and compatibility limits.
     public func encode() -> Data {
+        // Native-endian header: magic UInt32, version UInt8, flags UInt8,
+        // reserved UInt16, count UInt64, tag length UInt16; then tags and payload.
         let version: UInt8 = 1
         let headerSize = 18
         let typeSize = Element.RawRepresentation.type.encodedSize()
@@ -122,12 +83,12 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
         return data
     }
 
-    /// Create an array from a Data dump.
+    /// Copies and validates a native binary snapshot into a new array.
     ///
-    /// Note that this copies the data into a freshly allocated MultiArray. If
-    /// you need (or want) a zero-copy implementation please contact us on
-    /// GitHub to signal your interest!
-    ///
+    /// Throws `BinaryMultiArrayError` for invalid metadata, incompatible layout
+    /// or endianness, or invalid raw-value domains. Matching representation tags
+    /// do not establish surface-type identity; decode as the intended element
+    /// type. See <doc:Serialization> for compatibility limits.
     public init(data: Data) throws {
         let expectedVersion: UInt8 = 1
         let expectedHeaderSize = 18 // of the expected version
@@ -189,16 +150,27 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
     }
 }
 
+/// A failure to validate or read a native binary snapshot.
 public enum BinaryMultiArrayError: Error, Equatable, CustomStringConvertible {
+    /// The input does not begin with the expected snapshot magic.
     case badMagic
+    /// The snapshot was encoded with incompatible byte order.
     case endianMismatch
+    /// The encoded `Data` did not expose its underlying bytes.
     case storageUnavailable
+    /// An element's raw value is outside its surface type's domain.
     case invalidRawRepresentation(index: Int)
+    /// The count or derived layout size cannot be represented.
     case overflow(UInt64)
+    /// The encoding version is not supported.
     case unsupportedVersion(Int)
+    /// A metadata read requires bytes beyond the input's extent.
     case truncated(index: Int, required: Int, total: Int)
+    /// The byte count does not match the expected snapshot layout.
     case sizeMismatch(expected: Int, actual: Int)
+    /// A representation tag differs from the expected tag.
     case typeMismatch(expected: UInt8, actual: UInt8)
+    /// The consumed tag length differs from the header's declared length.
     case malformedType(expected: Int, actual: Int)
 
     public var description: String {
@@ -250,29 +222,23 @@ extension Data {
     }
 }
 
-// The subset of ArrayData types that are safe to serialise as raw bytes. By
-// "safe" we mean:
-//  - no heap pointers / references embedded in the representation. This is
-//    enforced by not providing a conformance to the Box escape hatch.
-//  - the representation's byte layout is fully determined by the type.
-//  - data written is deterministic, padding bytes included. This is true even
-//    for structure types due to the aforementioned exclusion of Box, thus there
-//    is no way to encode types that might include internal padding.
-//
 /// A raw representation that can be encoded as a native binary snapshot.
 ///
-/// Implement this only for storage whose bytes are fully initialized and
-/// contain no references. The tag requirements describe the representation,
-/// not the original Swift element type. Snapshots are not a stable wire format.
+/// Storage must contain no references and have a type-determined layout with
+/// fully initialized, deterministic bytes, including padding. Payloads copied
+/// into reserved storage must be safe to validate and destroy on decode failure
+/// while its published count is zero. The tags describe the representation,
+/// not the surface element type; snapshots are not a stable wire format.
 public protocol BinaryArrayData: ArrayData {
+    /// The complete representation tag.
     static var type: Type { get }
+    /// The outermost representation tag.
     static var typeHead: TypeHead { get }
 
-    // Match and consume this type's encoding from `data[index...]`. On success
-    // the index will point to the start of the payload section.
+    /// Verifies and consumes this representation's tags, advancing `offset`.
     static func verifyType(in data: Data, at offset: inout Int) throws
 
-    // Append the type tag into the Data buffer
+    /// Appends the complete representation tag.
     static func appendType(to data: inout Data)
 
     /// Appends only initialized field prefixes in the count-sized layout.

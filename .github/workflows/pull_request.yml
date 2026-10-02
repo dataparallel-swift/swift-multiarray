@@ -82,5 +82,5 @@ jobs:
     container: swift:6.4.0-noble
     steps:
       - uses: actions/checkout@v4
-      - name: Run sanitizer smoke and ownership tests
+      - name: Run full test suite with sanitizer
         run: scripts/${{ matrix.script }} -Xswiftc -warnings-as-errors

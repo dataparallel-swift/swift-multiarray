@@ -10,12 +10,18 @@ Create a ``MultiArray`` from a collection or sequence, repeat one value with
 ``MultiArray/init(count:with:)``. These initializers manage partial
 initialization for you.
 
+@Snippet(path: "Guide", slice: "ordinary-construction")
+
+Counts and capacities must be nonnegative. If a generating closure throws,
+already initialized elements are destroyed and its error is rethrown. Repeating
+a reference-valued payload retains it rather than cloning the referenced object.
+
 ## Synchronous prefix construction
 
 The synchronous
 ``MultiArray/init(unsafeUninitializedCapacity:initializingWith:)-6xxxc`` gives
 its closure a by-value ``UnsafeUninitializedMultiArrayBuffer`` view and an
-`inout` initialized count. Initialize exactly the prefix `0..<initializedCount`; the
+`inout` initialized count, initially zero. Initialize exactly the prefix `0..<initializedCount`; the
 result has that count, which may be smaller than the requested capacity.
 
 @Snippet(path: "Guide", slice: "sync-construction")
@@ -23,7 +29,9 @@ result has that count, which may be smaller than the requested capacity.
 Update the count even if the closure throws, typically with `defer`. Reporting
 too few initialized elements leaks their resources. The count is checked against
 the range `0...capacity`, and reporting a count outside that range traps. Do not
-initialize a slot twice or use the buffer after the closure returns.
+initialize a slot twice, let the view escape, or use it after the closure finishes.
+On throw, the reported prefix is destroyed and the closure's typed error is
+rethrown. Prefix coverage is the caller's responsibility; it is not checked.
 
 ## Asynchronous arbitrary-order construction
 
