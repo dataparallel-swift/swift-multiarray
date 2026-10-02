@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Sums: encode choice between constructors.
-//
 // TODO: This simple binary sum has no ArrayData conformance. A sum-of-products
 // representation, potentially inverted into product-of-sums, could reuse the
 // underlying storage for fields shared by individual variants.
+/// A choice between two generic representations.
+///
+/// `Sum` does not yet conform to `ArrayData`, so it cannot be used as a stored
+/// `MultiArray` raw representation.
 public enum Sum<A, B> {
     case lhs(A)
     case rhs(B)

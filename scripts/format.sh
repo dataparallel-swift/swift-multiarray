@@ -15,4 +15,5 @@ swiftformat --cache ignore \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
   "${ROOT_DIR}/Benchmarks" \
+  "${ROOT_DIR}/Snippets" \
   "$@"
