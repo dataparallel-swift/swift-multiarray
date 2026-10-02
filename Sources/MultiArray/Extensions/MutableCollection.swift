@@ -13,6 +13,10 @@
 // limitations under the License.
 
 extension MultiArray: MutableCollection {
+    /// Reads or replaces an element at an index in `0..<count`.
+    ///
+    /// Replacement detaches shared storage before mutation. An out-of-range
+    /// index violates the collection's contract.
     @inlinable
     public subscript(index: Index) -> Element {
         get {

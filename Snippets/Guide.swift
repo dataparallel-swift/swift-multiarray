@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
 import MultiArray
 
 // snippet.point
@@ -83,6 +84,17 @@ enum Status: UInt8 {
 
 // snippet.end
 
+// snippet.ordinary-construction
+func ordinaryConstruction() -> MultiArray<Int32> {
+    let repeated = MultiArray<Int32>(repeating: 7, count: 3)
+    let generated = MultiArray<Int32>(count: 3) { Int32($0) }
+    let copied = MultiArray(generated)
+    precondition(Array(repeated) == [7, 7, 7])
+    return copied
+}
+
+// snippet.end
+
 // snippet.sync-construction
 func makePrefix() -> MultiArray<Int32> {
     MultiArray<Int32>(unsafeUninitializedCapacity: 4) { buffer, initializedCount in
@@ -113,6 +125,94 @@ func makeInParallel() async -> MultiArray<Int32> {
 
 // snippet.end
 
+// snippet.manual-representation
+struct Measurement: Generic {
+    var value: Double
+    var label: String
+
+    typealias RawRepresentation = Product<Double, Box<String>>
+
+    var rawRepresentation: RawRepresentation {
+        Product(self.value, Box(self.label))
+    }
+
+    init(value: Double, label: String) {
+        self.value = value
+        self.label = label
+    }
+
+    init(from representation: RawRepresentation) {
+        self.value = representation._0
+        self.label = representation._1.unbox
+    }
+}
+
+// snippet.end
+
+// snippet.collection
+func copyAndTransform() -> MultiArray<Point> {
+    let original = makePoints()
+    var copy = original
+    copy[0] = Point(x: 10, y: 20)
+    precondition(original[0].x == 1)
+
+    let shifted: MultiArray<Point> = copy.map { Point(x: $0.x + 1, y: $0.y) }
+    return shifted
+}
+
+// snippet.end
+
+// snippet.snapshot-concurrency
+func independentCopies() async -> [Int32] {
+    let snapshot = MultiArray<Int32>([1, 2, 3])
+    let results = await withTaskGroup(of: Int32.self, returning: [Int32].self) { group in
+        for increment in Int32(1) ... 2 {
+            group.addTask {
+                var local = snapshot
+                local[0] += increment
+                return local[0]
+            }
+        }
+        var results: [Int32] = []
+        for await value in group {
+            results.append(value)
+        }
+        return results.sorted()
+    }
+    precondition(snapshot[0] == 1)
+    return results
+}
+
+// snippet.end
+
+// snippet.scratch
+func reuseScratch() -> Int32 {
+    let scratch = MultiArrayBuffer<Int32>(repeating: 0, count: 4)
+    let alias = scratch
+    scratch[1] = 42
+    return alias[1] // Both handles refer to the same allocation.
+}
+
+// snippet.end
+
+// snippet.codable
+func codingRoundTrip() throws -> MultiArray<Int32> {
+    let values = MultiArray<Int32>([1, 2, 3])
+    let json = try JSONEncoder().encode(values)
+    return try JSONDecoder().decode(MultiArray<Int32>.self, from: json)
+}
+
+// snippet.end
+
+// snippet.binary-snapshot
+func snapshotRoundTrip() throws -> MultiArray<Status> {
+    let values = MultiArray<Status>([.off, .on])
+    let data = values.encode()
+    return try MultiArray<Status>(data: data)
+}
+
+// snippet.end
+
 func guideExamples() {
     let points = makePoints()
     precondition(points.count == 2)
@@ -128,9 +228,24 @@ func guideExamples() {
     precondition(statuses[1] == .on)
 
     precondition(Array(makePrefix()) == [0, 1, 2])
+    precondition(Array(ordinaryConstruction()) == [0, 1, 2])
+
+    let measurement = Measurement(value: 21, label: "temperature")
+    let measurements = MultiArray([measurement])
+    precondition(measurements[0].value == 21)
+    precondition(measurements[0].label == "temperature")
+    precondition(copyAndTransform()[0].x == 11)
+    precondition(reuseScratch() == 42)
 }
 
 guideExamples()
 
 let parallel = await makeInParallel()
 precondition(Array(parallel) == [0, 1, 2, 3])
+
+let independent = await independentCopies()
+precondition(independent == [2, 3])
+let decoded = try codingRoundTrip()
+precondition(Array(decoded) == [1, 2, 3])
+let restored = try snapshotRoundTrip()
+precondition(Array(restored) == [.off, .on])
