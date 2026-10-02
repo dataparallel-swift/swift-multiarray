@@ -1,0 +1,86 @@
+# Core Architecture
+
+`MultiArray<Element>` decomposes each element into its raw scalar fields and
+stores each field in its own region of a single contiguous allocation. Two
+protocols do the work: `Generic` describes *how a type decomposes*, `ArrayData`
+describes *how the decomposed pieces are stored*.
+
+```swift
+public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData
+```
+
+## The `Generic` Protocol
+
+`Generic` is an **open** protocol: it maps a type to an isomorphic
+`RawRepresentation` built from a small set of constructors, plus conversions
+to and from that representation. Users can conform their own types by hand.
+
+- **Primitives** (`Int8`–`Int128`, `UInt8`–`UInt128`, `Float16`/`Float32`/`Float64`, `SIMD2`–`SIMD64`) have `RawRepresentation = Self`. `Int`/`UInt` map to their fixed-width equivalent, and `Bool` to `UInt8`. Some conformances are platform- or availability-gated (`Float16` is arm64-only; `Int128`/`UInt128` require newer OSes).
+- **`Unit`** is the zero-byte base case (empty structs).
+- **`Box<T>`** wraps types such as `String` whose values must be retained rather
+  than copied as raw bytes.
+- **`Product<A, B>`** pairs two `Generic` types; nested products represent
+  multi-field structs.
+- **`Sum<A, B>`** exists for enum-like types but has no `ArrayData` conformance (not yet stored in SoA).
+
+The module also ships conformances for `Date` (via `TimeInterval`) and `UUID`
+(via `SIMD16<UInt8>`).
+
+### Macro scaffold
+
+The package declares an `@Generic` macro and contains a compiler-plugin target,
+but its expansion is currently only a placeholder; it does not yet derive a
+usable representation from a declaration's stored properties. Until that
+implementation lands, conforming types must provide `RawRepresentation`,
+`rawRepresentation`, and `init(from:)` themselves.
+
+The `T2`–`T16` tuple helpers in `Tuple.swift` are conveniences for hand-written
+conformances. `Product` can be nested directly when another shape is preferable.
+
+## The `ArrayData` Protocol
+
+`ArrayData` is a **closed** protocol describing how a type manages its own
+memory within the SoA buffer. Key implementations:
+
+| Type | Buffer | Notes |
+|------|--------|-------|
+| Primitives (`Buffer == UnsafeMutablePointer<Self>`) | `UnsafeMutablePointer<Self>` | Typed initialization and direct indexing |
+| `Unit` | `Void` | Zero-byte, all operations are no-ops |
+| `Box<T>` | `UnsafeMutablePointer<T>` | Manual init/deinit (ref-counted), no memcpy |
+| `Product<A, B>` | `(A.Buffer, B.Buffer)` | Recursive: reserves space for both A and B back-to-back |
+| `SIMD<N>` | `UnsafeMutablePointer<Self>` | Stored as atomic blobs, **not** flattened to SoA |
+
+## Storage Layout
+
+```
+MultiArray<Element>
+  └── arrayData: MultiArrayData<Element.RawRepresentation>  (reference-counted class)
+        ├── count: Int
+        ├── context: UnsafeMutableRawPointer  (single heap allocation)
+        └── storage: A.Buffer  (tuple of typed pointers into context)
+
+Single allocation (context):
+  [Field_A_data...][padding?][Field_B_data...][padding?][Field_C_data...]
+```
+
+The layout is computed by walking the `Product` tree twice, and the two walks
+must agree: `rawSize(capacity:from:)` accumulates alignment padding and strides
+to size the allocation up front, then `reserve(capacity:from:)` walks it again
+to carve out the aligned regions and hand back the tuple of typed pointers.
+Padding between regions is zero-initialized.
+
+## Mutation and ownership
+
+`MultiArrayData` is a class, so assigning a `MultiArray` shares the buffer.
+The `MutableCollection` subscript currently writes directly into that shared
+storage; copy-on-write has not yet been implemented. Mutating one of two copied
+`MultiArray` values therefore also changes the other.
+
+## Uninitialized construction
+
+`init(unsafeUninitializedCapacity:initializingWith:)` supports bulk construction
+by handing its closure an `UninitializedMultiArrayData<Element>` view over the
+raw storage, typed in terms of the surface `Element` rather than its
+`RawRepresentation`. The closure must initialize every element before returning.
+The current buffer view does not track how many elements were initialized, so
+returning or throwing after partial initialization is not safe.
