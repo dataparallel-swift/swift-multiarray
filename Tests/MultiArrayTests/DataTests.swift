@@ -19,6 +19,19 @@ import Testing
 @Suite
 struct DataTests {
     @Test
+    func partialRawRepresentablePrefixesHaveCanonicalSnapshots() throws {
+        let values = [StatusRecord(status: .on, payload: 111), StatusRecord(status: .unknown, payload: 222)]
+        let partial = MultiArray<StatusRecord>(unsafeUninitializedCapacity: 16) { buffer, count in
+            for (index, value) in values.enumerated() {
+                buffer.initializeElement(at: index, to: value)
+                count += 1
+            }
+        }
+        #expect(partial.encode() == MultiArray(values).encode())
+        #expect(Array(try MultiArray<StatusRecord>(data: partial.encode())) == values)
+    }
+
+    @Test
     func failMagic() throws {
         let array: MultiArray<Int> = [1, 2, 3]
         var encoded = array.encode()
@@ -76,6 +89,44 @@ struct DataTests {
 
         #expect(throws: BinaryMultiArrayError.typeMismatch(expected: 0x35, actual: 0x15)) {
             _ = try MultiArray<Float32>(data: encoded)
+        }
+    }
+
+    @Test
+    func rawRepresentableEnumRoundtrips() throws {
+        let original: MultiArray<Status> = [.off, .on, .unknown]
+        let encoded = original.encode()
+        #expect(encoded == MultiArray<UInt8>([0, 2, 255]).encode())
+
+        let decoded = try MultiArray<Status>(data: encoded)
+        #expect(decoded == original)
+    }
+
+    @Test
+    func rawRepresentableNewtypeRoundtrips() throws {
+        let original: MultiArray<Identifier> = [.init(rawValue: 0), .init(rawValue: 42), .init(rawValue: .max)]
+        let decoded = try MultiArray<Identifier>(data: original.encode())
+        #expect(decoded == original)
+    }
+
+    @Test
+    func rejectsInvalidRawRepresentableValue() throws {
+        let encoded = MultiArray<UInt8>([Status.off.rawValue, Status.on.rawValue, 42]).encode()
+
+        #expect(throws: BinaryMultiArrayError.invalidRawRepresentation(index: 2)) {
+            _ = try MultiArray<Status>(data: encoded)
+        }
+    }
+
+    @Test
+    func rejectsInvalidNestedRawRepresentableValue() throws {
+        let encoded = MultiArray([
+            Product(Status.off.rawValue, UInt16(10)),
+            Product(UInt8(42), UInt16(20)),
+        ]).encode()
+
+        #expect(throws: BinaryMultiArrayError.invalidRawRepresentation(index: 1)) {
+            _ = try MultiArray<StatusRecord>(data: encoded)
         }
     }
 

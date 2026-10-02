@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Architecture documentation
 - Developer scripts for Linux and macOS builds, tests, formatting, and preflight checks
+- `Generic` witnesses and structurally validated storage for `RawRepresentable` types
 
 ### Changed
 
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject negative or overflowing storage layouts before allocation and enforce the 16-byte maximum field alignment
 - Decode binary snapshots correctly from nonzero-index `Data` slices
 - Encode only initialized field prefixes after partial-capacity construction, producing the same binary snapshot as exact-capacity construction
+- Reject out-of-domain `RawRepresentable` values during binary decoding
 - Preserve `MultiArray` value semantics by copying shared storage before indexed mutation
 
 ## [2.1.0] - 2025-12-16
