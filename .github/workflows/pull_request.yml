@@ -12,39 +12,75 @@ jobs:
         run: scripts/format.sh --lint --reporter github-actions-log
 
   test-linux:
-    name: Test Swift ${{ matrix.swift }}
+    name: Test Linux Swift ${{ matrix.swift.version }} (${{ matrix.configuration }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - swift: "6.1"
-            image: swift:6.1-jammy
-          - swift: "6.2"
-            image: swift:6.2.4-jammy
-          - swift: "6.3"
-            image: swift:6.3.3-noble
-    container: ${{ matrix.image }}
+        configuration:
+          - debug
+          - release
+        swift:
+          - { version: "6.0", image: swift:6.0.3-jammy }
+          - { version: "6.1", image: swift:6.1.3-jammy }
+          - { version: "6.2", image: swift:6.2.4-jammy }
+          - { version: "6.3", image: swift:6.3.3-noble }
+          - { version: "6.4", image: swift:6.4.0-noble }
+    container: ${{ matrix.swift.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Run Tests
+        env:
+          SWIFT_BUILD_CONFIGURATION: ${{ matrix.configuration }}
         run: scripts/test-linux.sh -Xswiftc -warnings-as-errors
       - name: Check Vectorization
+        if: matrix.configuration == 'release'
         run: scripts/check-vectorization.sh
+      - name: Check Sendability
+        if: matrix.configuration == 'release'
+        run: scripts/check-sendability.sh
+      - name: Check Concurrency Signatures
+        if: matrix.configuration == 'release'
+        run: scripts/check-concurrency-signatures.sh
 
   test-macos-26:
-    name: Test macOS
+    name: Test macOS (${{ matrix.configuration }})
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration:
+          - debug
+          - release
     steps:
       - uses: actions/checkout@v4
       - name: Run Tests
+        env:
+          SWIFT_BUILD_CONFIGURATION: ${{ matrix.configuration }}
         run: scripts/test-macos.sh -Xswiftc -warnings-as-errors
 
   docs:
     name: Check DocC catalog
     runs-on: ubuntu-latest
-    container: swift:6.3.3-noble
+    container: swift:6.4.0-noble
     steps:
       - uses: actions/checkout@v4
       - name: Build documentation
         run: scripts/build-docs.sh
+
+  sanitizers-linux:
+    name: ${{ matrix.sanitizer }} Swift 6.4
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sanitizer: ASan
+            script: test-asan-linux.sh
+          - sanitizer: TSan
+            script: test-tsan-linux.sh
+    container: swift:6.4.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run sanitizer smoke and ownership tests
+        run: scripts/${{ matrix.script }} -Xswiftc -warnings-as-errors

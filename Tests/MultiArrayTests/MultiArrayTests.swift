@@ -241,6 +241,16 @@ struct MultiArrayTests {
         #endif
 
         @Test
+        func synchronousInitializerAcceptsByValueBuffer() {
+            let initialize: (UnsafeUninitializedMultiArrayBuffer<Int>, inout Int) -> Void = { buffer, initializedCount in
+                buffer.initializeElement(at: 0, to: 42)
+                initializedCount = 1
+            }
+            let array = MultiArray<Int>(unsafeUninitializedCapacity: 2, initializingWith: initialize)
+            #expect(Array(array) == [42])
+        }
+
+        @Test
         func throwingInitWithTrivialType() throws {
             #expect(throws: PartialInitError.self) {
                 _ = try MultiArray<Int>(unsafeUninitializedCapacity: 10) { buffer, _ in

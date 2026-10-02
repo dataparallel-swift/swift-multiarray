@@ -26,6 +26,8 @@ public struct Product<A, B> {
     }
 }
 
+extension Product: Sendable where A: Sendable, B: Sendable {}
+
 extension Product: Generic where A: Generic, B: Generic {
     public typealias RawRepresentation = Product<A.RawRepresentation, B.RawRepresentation>
 
@@ -95,6 +97,19 @@ extension Product: ArrayData where A: ArrayData, B: ArrayData {
     public static func rawSize(capacity: Int, from offset: Int) -> Int? {
         guard let aEnd = A.rawSize(capacity: capacity, from: offset) else { return nil }
         return B.rawSize(capacity: capacity, from: aEnd)
+    }
+}
+
+extension Product: PartialInitializationArrayData where A: PartialInitializationArrayData, B: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool {
+        A.requiresInitializationTracking || B.requiresInitializationTracking
+    }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        A.deinitialize(arrayData.0, at: index)
+        B.deinitialize(arrayData.1, at: index)
     }
 }
 

@@ -9,6 +9,22 @@ describes *how the decomposed pieces are stored*.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData
 ```
 
+## Compiler and platform support
+
+The package's minimum tools version is Swift 6.0.
+The deployment floors are macOS 10.15, iOS 12, tvOS 12, and watchOS 9.
+CI builds and tests every minor compiler release from Swift 6.0 through 6.4.
+
+The external client concurrency fixture typechecks the shipped async
+initializer with typed failure and a sendable initialization view captured by
+joined child tasks, under complete strict-concurrency checking and warnings
+as errors. It also rejects an initialization view whose element is not
+`Sendable` and guards the initializer's `sending` body modifier. The async
+public API is annotated
+`@available(macOS 10.15, iOS 13, tvOS 13, watchOS 9, *)`: Swift concurrency is
+not available at the retained iOS and tvOS package floors, while the macOS and
+watchOS package floors already suffice.
+
 ## The `Generic` Protocol
 
 `Generic` is an **open** protocol: it maps a type to an isomorphic
@@ -176,18 +192,112 @@ capacity after partial-prefix construction. Detaching shared storage copies
 only the initialized fields into a new allocation with `capacity == count`.
 Mutation of uniquely owned storage retains its existing capacity.
 
-`MultiArray` does not conform to `Sendable`; an instance must remain within one
-concurrency isolation domain.
+`MultiArray` conditionally conforms to `@unchecked Sendable` when both its
+element and raw representation are `Sendable`. An immutable snapshot can cross
+isolation domains for concurrent reads; separately owned copies can detach and
+mutate concurrently. This does not permit concurrent access to the same mutable
+variable, nor sharing an unsafe mutable buffer view between tasks.
+
+`MultiArrayBuffer` is the separate fixed-size, reference-semantic scratch
+owner. It holds one `MultiArrayData` allocation directly and performs checked
+indexed reads and in-place writes without CoW or uniqueness checks. The owner
+has no `Sendable` conformance. A concurrency adapter may retain it inside a
+small audited unchecked-sendable endpoint only when its scheduler guarantees
+that concurrent writes and read/write pairs use disjoint logical indices;
+overlapping access requires synchronization. Retaining the owner, rather than
+only its raw pointers, keeps every field allocation and boxed value alive for
+the endpoint's lifetime. No zero-copy conversion to or from `MultiArray` is
+provided while aliases can exist.
+
+### Transferable representations
+
+Transferability has two independent type-level conditions. A transferable
+`MultiArray<Element>` requires both `Element: Sendable` and
+`Element.RawRepresentation: Sendable`. The first covers the value reconstructed
+and returned by a read; the second covers the logical values held in the stored
+representation. Requiring only the surface element is insufficient because the
+open `Generic` protocol can select a representation containing hidden
+non-`Sendable` state.
+
+These constraints do not make `Element.RawRepresentation.Buffer` sendable.
+Built-in buffers contain raw pointers, so the owner or scoped view must still
+provide audited lifetime and synchronization guarantees. `ArrayData`
+conformers used across isolation boundaries have an additional semantic
+obligation: `read(_:at:)` must not mutate shared state or expose non-`Sendable`
+state hidden by the buffer. `Generic` conversions must likewise be pure with
+respect to shared state.
+
+Swift cannot express that operational promise with a normal protocol
+refinement while retaining `Box<Element>` for every `Element: Sendable`:
+conditional conformance to a non-marker protocol may not depend on the marker
+protocol `Sendable`, and user protocols that inherit `Sendable` are not
+themselves treated as marker protocols. The design therefore uses standard
+`Sendable` constraints and documents the remaining unsafe-code obligation
+rather than introducing an underscored marker or unchecked representation
+conformances.
+
+The built-in representation tree composes checked `Sendable` conformances:
+`Unit`, boxes with sendable payloads, products and sums of sendable children,
+raw-value representations with a sendable raw value, and the `T2`–`T16`
+surface helpers. Checked conformances must be declared in the source file that
+defines their type, so they intentionally remain colocated rather than using
+`@unchecked` conformances in a central extension file.
+
+`BinaryArrayData` remains orthogonal. Binary snapshots deliberately exclude all
+`Box` values, including safe sendable payloads such as `String`, while binary
+encodability alone cannot prove that an external `Generic` conversion or
+`ArrayData` implementation is safe for concurrent access.
 
 ## Uninitialized construction
 
-`init(unsafeUninitializedCapacity:initializingWith:)` supports bulk construction
-by handing its closure an `UninitializedMultiArrayData<Element>` view over the
-raw storage, typed in terms of the surface `Element` rather than its
-`RawRepresentation`. The closure initializes a prefix of that storage and
-reports its length through an `inout` count. It must report the initialized
-prefix even when it throws, normally with `defer`; `MultiArrayData.deinit` uses
-that count to destroy exactly the initialized elements. Reporting too few
-elements leaks their resources. The reported count is checked against
-`0...capacity`, and a count outside that range traps, including when the closure
-throws.
+The synchronous `init(unsafeUninitializedCapacity:initializingWith:)` supports
+bulk construction by handing its closure an
+`UnsafeUninitializedMultiArrayBuffer<Element>` view over the raw storage,
+typed in terms of the surface `Element` rather than its `RawRepresentation`.
+The view is passed by value; its immutable fields still refer to writable
+storage, so only the initialized-prefix count needs `inout`.
+`UninitializedMultiArrayData` remains a deprecated source-compatible alias.
+The closure initializes a prefix of that storage and reports its length
+through an `inout` count. It must report the initialized prefix even when it
+throws, normally with `defer`; `MultiArrayData.deinit` uses that count to
+destroy exactly the initialized elements. Reporting too few elements leaks
+their resources. The reported count is checked against `0...capacity`, and a
+count outside that range traps, including when the closure throws.
+
+`PartialInitializationArrayData` is a separate, opt-in refinement of
+`ArrayData` for arbitrary-order construction. It provides
+`deinitialize(_:at:)`, which destroys one initialized logical element, and
+`requiresInitializationTracking`, which tells that constructor whether cleanup
+needs per-element flags. Machine scalars, SIMD, and `Unit` need no flags;
+`Box` always does, and `Product` needs them when either child does. A
+`RawValueRepresentation` inherits the trait from its raw value. This leaves
+existing external `ArrayData` conformances source-compatible but does not
+grant them the arbitrary-order initializer automatically.
+
+The async initializer accepts a `sending` body and initializes directly into
+the final allocation in any order. A small owner keeps the allocation alive
+across suspension. The body reports an initialized prefix through an `inout`
+count, initially zero, bounded by capacity on both success and throw. The owner
+holds the storage's element count at zero until success, then publishes the
+reported prefix without moving elements or reducing capacity. On failure it
+destroys only initialized tracked slots and rethrows the original
+typed error. Tracked storage has one zeroed byte per logical index; the flag
+is set only after its element is fully initialized. Packed bits would make
+writes to flags for adjacent indices modify the same byte, creating a race
+even when the elements themselves occupy disjoint storage. Trivial
+representations allocate no flags, so the caller's completeness promise is
+not dynamically checked for them. The synchronous prefix initializer still
+uses its count and prefix cleanup; the refinement does not change its contract.
+
+The initialization view is `@unchecked Sendable` only when both the surface
+element and raw representation are `Sendable`. Distinct indices may then be
+initialized concurrently; the caller must join all child tasks before the
+body completes. Every index in the reported prefix must be initialized exactly
+once, with no initialized elements outside that prefix on success, and the view
+must not escape the body. These are unsafe caller obligations: same-index
+races and escaped use cannot be enforced. Without a race, tracked duplicate
+initialization, missing prefix slots, and initialized slots outside the prefix
+trigger debug assertions; release builds do not check them. The flags remain
+necessary in every build for cleanup on throw.
+Cancellation only triggers cleanup when the body observes it and throws its
+declared failure type.

@@ -83,6 +83,36 @@ enum Status: UInt8 {
 
 // snippet.end
 
+// snippet.sync-construction
+func makePrefix() -> MultiArray<Int32> {
+    MultiArray<Int32>(unsafeUninitializedCapacity: 4) { buffer, initializedCount in
+        var initialized = 0
+        defer { initializedCount = initialized }
+        for index in 0 ..< 3 {
+            buffer.initializeElement(at: index, to: Int32(index))
+            initialized += 1
+        }
+    }
+}
+
+// snippet.end
+
+// snippet.async-construction
+func makeInParallel() async -> MultiArray<Int32> {
+    await MultiArray<Int32>(unsafeUninitializedCapacity: 4) { buffer, initializedCount async in
+        await withTaskGroup(of: Void.self) { group in
+            for index in 0 ..< buffer.count {
+                group.addTask {
+                    buffer.initializeElement(at: index, to: Int32(index))
+                }
+            }
+        }
+        initializedCount = buffer.count
+    }
+}
+
+// snippet.end
+
 func guideExamples() {
     let points = makePoints()
     precondition(points.count == 2)
@@ -96,6 +126,11 @@ func guideExamples() {
 
     let statuses: MultiArray<Status> = [.off, .on]
     precondition(statuses[1] == .on)
+
+    precondition(Array(makePrefix()) == [0, 1, 2])
 }
 
 guideExamples()
+
+let parallel = await makeInParallel()
+precondition(Array(parallel) == [0, 1, 2, 3])

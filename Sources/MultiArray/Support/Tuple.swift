@@ -853,4 +853,35 @@ extension T16: Generic where A: Generic, B: Generic, C: Generic, D: Generic, E: 
     }
 }
 
+extension T2: Sendable where A: Sendable, B: Sendable {}
+extension T3: Sendable where A: Sendable, B: Sendable, C: Sendable {}
+extension T4: Sendable where A: Sendable, B: Sendable, C: Sendable, D: Sendable {}
+extension T5: Sendable where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable {}
+extension T6: Sendable where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable {}
+extension T7: Sendable where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable {}
+extension T8: Sendable where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable {}
+extension T9: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable {}
+extension T10: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable {}
+extension T11: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable {}
+extension T12: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable, L: Sendable {}
+extension T13: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable, L: Sendable, M: Sendable {}
+extension T14: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable, L: Sendable, M: Sendable, N: Sendable {}
+extension T15: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable, L: Sendable, M: Sendable, N: Sendable, O: Sendable {}
+extension T16: Sendable
+    where A: Sendable, B: Sendable, C: Sendable, D: Sendable, E: Sendable, F: Sendable, G: Sendable, H: Sendable, I: Sendable,
+    J: Sendable, K: Sendable, L: Sendable, M: Sendable, N: Sendable, O: Sendable, P: Sendable {}
+
 // swiftlint:enable file_length

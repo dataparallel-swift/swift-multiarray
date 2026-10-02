@@ -16,7 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@Generic` derivation for raw-value enums; enums with associated values or with no possible raw type are diagnosed
 - `@Box` for transparently storing mutable non-`Generic` properties, including default values, module-qualified attributes, and escaped property names; stored properties without an explicit type annotation are diagnosed, and an invalid `@Box` declaration does not cascade into `@Generic` errors
 - `Box: Equatable` conformance
+- Checked conditional `Sendable` conformances for the representation constructors
+- Conditional `Sendable` conformance for immutable `MultiArray` snapshots with sendable elements and raw representations
+- Fixed-size `MultiArrayBuffer` for reusable, reference-semantic SoA scratch with disjoint-index concurrency
 - DocC guides with compiler-checked examples and a cross-version automatic-vectorization regression check
+- A Swift 6.0 through 6.4 strict-concurrency signature compatibility check
+- An opt-in `PartialInitializationArrayData` refinement for per-index cleanup of scattered initialization
+- Async arbitrary-order prefix construction with a published initialized count and exact cleanup of partially initialized tracked representations
 
 ### Changed
 
@@ -27,8 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Make `ArrayData.rawSize(capacity:from:)` return an optional checked size
 - **Breaking:** Nested-product binary snapshots no longer contain unused opaque-struct padding
 - **Breaking:** Add `BinaryArrayData.appendPayload` for canonical field-wise snapshot copying; custom conformances whose `Buffer` is not `UnsafeMutablePointer<Self>` must supply an implementation
+- **Breaking:** Pass the synchronous unsafe initializer's buffer view by value instead of `inout`; the initialized count remains `inout`
+- Rename the construction view to `UnsafeUninitializedMultiArrayBuffer`; retain `UninitializedMultiArrayData` as a deprecated source-compatible alias
 - Improve `init(repeating:count:)` by decomposing the repeated value only once
 - Remove redundant per-element platform integer layout assertions
+- **Breaking:** Raise the minimum watchOS deployment target from 4 to 9, the oldest target supported by Swift 6.4
 
 ### Fixed
 

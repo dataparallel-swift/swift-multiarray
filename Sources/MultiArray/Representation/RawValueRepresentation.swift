@@ -37,6 +37,8 @@ public struct RawValueRepresentation<Value: RawRepresentable> {
     }
 }
 
+extension RawValueRepresentation: Sendable where Value.RawValue: Sendable {}
+
 extension Generic where Self: RawRepresentable, RawRepresentation == RawValueRepresentation<Self> {
     @inlinable
     public var rawRepresentation: RawRepresentation {
@@ -95,6 +97,18 @@ extension RawValueRepresentation: ArrayData where Value.RawValue: ArrayData {
     @inlinable
     public static func rawSize(capacity: Int, from offset: Int) -> Int? {
         Value.RawValue.rawSize(capacity: capacity, from: offset)
+    }
+}
+
+extension RawValueRepresentation: PartialInitializationArrayData where Value.RawValue: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool {
+        Value.RawValue.requiresInitializationTracking
+    }
+
+    @inlinable
+    public static func deinitialize(_ arrayData: Buffer, at index: Int) {
+        Value.RawValue.deinitialize(arrayData, at: index)
     }
 }
 
