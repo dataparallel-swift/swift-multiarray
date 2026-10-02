@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// An array where the elements are stored in struct-of-array style. This
-/// can provide better data locality and enable efficient (automatic)
-/// vectorisation.
+/// A fixed-size, mutable random-access collection with struct-of-arrays storage.
+///
+/// Field-wise storage can improve locality and enable automatic vectorization.
+/// Element replacement is supported; appending and resizing are not.
 ///
 /// `MultiArray` has value semantics: copies initially share storage, and an
 /// indexed mutation copies the storage before modifying it when necessary.
@@ -41,8 +42,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     @inlinable
     public var count: Int { arrayData.count }
 
-    /// Create a new array containing the specified number of a single,
-    /// repeating value.
+    /// Creates an array with `count` copies of a value.
+    ///
+    /// Requires a nonnegative count. Reference-valued payloads are retained,
+    /// not cloned.
     @inlinable
     public init(repeating value: Element, count: Int) {
         precondition(count >= 0)
@@ -51,8 +54,10 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 
     // Swift 6.2 needs the body in the client to vectorize MultiArray.map;
     // scripts/check-vectorization.sh enforces this cross-module contract.
-    /// Create a new MultiArray by applying the given function to each index to
-    /// produce each value.
+    /// Creates an array by generating one value for each index in `0..<count`.
+    ///
+    /// Requires a nonnegative count and calls the generator in index order.
+    /// If it throws, initialized elements are destroyed and its error is rethrown.
     @inline(__always)
     @inlinable
     public init<Failure: Error>(count: Int, with generator: (Int) throws(Failure) -> Element) throws(Failure) {
@@ -94,14 +99,17 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
         }
     }
 
-    /// Creates an array with the specified capacity, then calls the given
-    /// closure with a buffer covering the array's uninitialized memory.
+    /// Creates an array by initializing a prefix of uninitialized storage.
     ///
-    /// The closure must initialize a prefix of the buffer and set
-    /// `initializedCount` to the length of that prefix. It must update
-    /// `initializedCount` even when it throws so that the initialized elements
-    /// can be deinitialized safely. The reported count must be between zero
-    /// and the requested capacity, inclusive; otherwise, the initializer traps.
+    /// The closure receives the requested capacity and an `inout` count starting
+    /// at zero. Initialize each slot in `0..<initializedCount` exactly once and
+    /// no slots outside it. Report the prefix length even on throw so cleanup
+    /// can destroy those elements. The resulting array retains the capacity.
+    ///
+    /// Requires a nonnegative capacity. A reported count outside `0...capacity`
+    /// traps on success or throw. The view must not escape or remain in use after
+    /// the closure finishes. If the closure throws, the prefix is destroyed and
+    /// its typed error is rethrown. See <doc:ConstructingArrays> for examples.
     ///
     /// - Parameters:
     ///   - count: The maximum number of elements that can be initialized.
@@ -140,6 +148,7 @@ extension MultiArray: @unchecked Sendable
 /// The synchronous initializer also requires that prefix count on throw; the
 /// asynchronous initializer uses per-index tracking to clean up scattered writes
 /// on throw. Follow the enclosing initializer's lifetime and concurrency contract.
+/// This view does not own the allocation and must not escape the initializer.
 public struct UnsafeUninitializedMultiArrayBuffer<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     let storage: Element.RawRepresentation.Buffer
@@ -197,8 +206,8 @@ internal final class MultiArrayData<A: ArrayData> {
     @usableFromInline
     let context: UnsafeMutableRawPointer
 
-    // Storing the internal pointers for speed(?), but we could also recompute
-    // them from the base context.
+    // Field pointers use capacity-sized offsets and stay valid for this owner's
+    // lifetime. Changing the initialized count must not recompute their layout.
     @usableFromInline
     let storage: A.Buffer
 

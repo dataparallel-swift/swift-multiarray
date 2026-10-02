@@ -23,21 +23,29 @@ scripts/test-linux.sh
 scripts/check-vectorization.sh
 scripts/check-sendability.sh
 scripts/check-concurrency-signatures.sh
-scripts/test-asan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|PartialInitializationArrayDataTests|AsyncInitializationTests|MultiArrayBufferTests|boxDoesNotLeak'
-scripts/test-tsan-linux.sh --filter 'SanitizerSmokeTests|MutableCollectionTests|ThrowingInitTests|RepeatingInitializationTests|PartialInitializationArrayDataTests|AsyncInitializationTests|MultiArrayBufferTests|boxDoesNotLeak'
+scripts/test-asan-linux.sh
+scripts/test-tsan-linux.sh
 scripts/preflight.sh
 ```
 
 Container-aware scripts use Swift 6.4 Noble by default (override with
 `SWIFT_IMAGE`) and run through Podman on macOS. ASan checks memory lifetime;
-TSan checks data races. Omit `--filter` to run all sanitizer-enabled tests. ASan
-excludes the compiler subprocess suite `MacroDiagnosticCompilationTests` because
-Foundation's `Process.run()` leaks bookkeeping on Linux Swift 6.4; those tests
-remain enabled in normal debug/release runs. A sanitizer report fails the command
-and is printed in the test output. CI runs the sanitizer suites on Linux x86-64.
+TSan checks data races. TSan runs the full suite while ASan excludes the
+compiler subprocess suite `MacroDiagnosticCompilationTests` because Foundation's
+`Process.run()` leaks bookkeeping on Linux Swift 6.4. A sanitizer report fails
+the command and is printed in the test output.
 
 The package supports Swift 6.0 through 6.4. CI tests every minor release in
-that range with complete strict concurrency checking.
+that range in debug and release with complete strict concurrency checking.
+Set `SWIFT_BUILD_CONFIGURATION=debug` to use debug builds locally; ordinary
+build and test scripts default to release.
+Declared deployment floors are macOS 10.15, iOS 12, tvOS 12, and watchOS 9;
+the async initializer requires iOS/tvOS 13. CI validates Linux and macOS,
+not the other declared Apple platforms.
+
+The [architecture notes](docs/ARCHITECTURE.md) explain decomposition, allocation,
+and ownership decisions. API contracts and usage examples live in DocC and the
+public source comments.
 
 On macOS, use the native build and test entry points when checking that
 platform:

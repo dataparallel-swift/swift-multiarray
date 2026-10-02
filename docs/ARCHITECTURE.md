@@ -1,303 +1,140 @@
 # Core Architecture
 
-`MultiArray<Element>` decomposes each element into its raw scalar fields and
-stores each field in its own region of a single contiguous allocation. Two
-protocols do the work: `Generic` describes *how a type decomposes*, `ArrayData`
-describes *how the decomposed pieces are stored*.
+This document explains the storage design and why it takes this shape. Public
+contracts and examples belong in the [DocC catalog](../Sources/MultiArray/MultiArray.docc/MultiArray.md)
+and API comments; local unsafe-memory proofs belong beside their implementations.
+Compiler support and development commands are listed in [README.md](../README.md).
 
-```swift
-public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData
-```
+## Representation decomposition
 
-## Compiler and platform support
+`Generic` separates an element's surface type from its storage representation.
+Conversions map values to and from an equivalent `RawRepresentation` tree;
+`ArrayData` interprets that tree as field-wise storage. Keeping these roles
+separate lets a small set of constructors support arbitrary application types
+without giving each type its own memory manager.
 
-The package's minimum tools version is Swift 6.0.
-The deployment floors are macOS 10.15, iOS 12, tvOS 12, and watchOS 9.
-CI builds and tests every minor compiler release from Swift 6.0 through 6.4.
+- Machine scalars terminate decomposition. `Int` and `UInt` use fixed-width
+  representations; `Bool` uses `UInt8`.
+- `Product<A, B>` combines fields recursively, avoiding opaque Swift struct
+  padding. `Unit` is the zero-byte base case.
+- `Box<T>` retains an ordinary Swift value instead of decomposing it. Its column
+  uses typed initialization, assignment, and destruction to preserve ownership.
+- `RawValueRepresentation<T>` stores the raw value while retaining the surface
+  domain as type-level validation metadata.
+- SIMD vectors remain single fields rather than becoming separate lane columns.
+- `Sum` describes alternatives but does not yet implement `ArrayData`.
 
-The external client concurrency fixture typechecks the shipped async
-initializer with typed failure and a sendable initialization view captured by
-joined child tasks, under complete strict-concurrency checking and warnings
-as errors. It also rejects an initialization view whose element is not
-`Sendable` and guards the initializer's `sending` body modifier. The async
-public API is annotated
-`@available(macOS 10.15, iOS 13, tvOS 13, watchOS 9, *)`: Swift concurrency is
-not available at the retained iOS and tvOS package floors, while the macOS and
-watchOS package floors already suffice.
+`@Generic` derives a balanced product tree and emits its conformance in an
+extension, preserving the original struct's memberwise initializer. `@Box`
+supplies boxed backing storage and transparent accessors. Derivation shares the
+same storage operations as hand-written conformances; it is not a second memory
+model. See [Representing Custom Types](../Sources/MultiArray/MultiArray.docc/Articles/RepresentingCustomTypes.md)
+for supported declarations and manual conformance examples.
 
-## The `Generic` Protocol
+`ArrayData` is public and supports specialized physical layouts, but application
+types should normally decompose into the supplied constructors instead. Custom
+storage must preserve the allocation, lifetime, and concurrency invariants of
+its callers.
 
-`Generic` is an **open** protocol: it maps a type to an isomorphic
-`RawRepresentation` built from a small set of constructors, plus conversions
-to and from that representation. Users can conform their own types by hand.
+## Allocation layout
 
-- **Primitives** (`Int8`–`Int128`, `UInt8`–`UInt128`, `Float16`/`Float32`/`Float64`, `SIMD2`–`SIMD64`) have `RawRepresentation = Self`. `Int`/`UInt` map to their fixed-width equivalent, and `Bool` to `UInt8`. Some conformances are platform- or availability-gated (`Float16` is arm64-only; `Int128`/`UInt128` require newer OSes).
-- **`Unit`** is the zero-byte base case (empty structs).
-- **`Box<T>`** wraps types such as `String` whose values must be retained rather
-  than copied as raw bytes.
-- **`Product<A, B>`** pairs two `Generic` types; nested products represent
-  multi-field structs.
-- **`RawValueRepresentation<T>`** preserves a `RawRepresentable` type's value
-  domain in the representation tree while storing only its raw value.
-- **`Sum<A, B>`** exists for enum-like types but has no `ArrayData` conformance (not yet stored in SoA).
-
-The module also ships conformances for `Date` (via `TimeInterval`) and `UUID`
-(via `SIMD16<UInt8>`).
-
-### Macro derivation
-
-For structs, the `@Generic` macro derives `RawRepresentation`,
-`rawRepresentation`, and `init(from:)` together in a conformance extension, so
-the original declaration retains Swift's synthesized memberwise initializer.
-It maps stored, explicitly typed properties into a balanced `Product` tree,
-uses `Unit` for an empty struct, and ignores static and computed properties.
-It diagnoses conditionally compiled stored properties and declaration-initialized
-stored `let` properties rather than silently omitting them. Conditional stored
-properties require a hand-written conformance instead of macro derivation. A
-generic struct states its `Generic` constraints on the declaration itself; the
-generated extension uses those constraints without repeating its `where`
-clause. Swift 6.3 accepts this complete extension-only conformance without the
-historical circular-reference diagnostic.
-
-For raw-value enums without associated values, `@Generic` derives a
-`RawValueRepresentation<Self>` typealias and adds the same conformance. The
-shared `RawRepresentable` protocol extension supplies the conversion witnesses,
-so macro-derived and hand-written conformances have identical validation.
-
-The `@Box` property macro turns a mutable, non-`Generic` field into transparent
-get/set accessors backed by `Box<T>`. It preserves a property initializer on the
-generated backing field. Swift does not allow accessor macros on `let`
-declarations, so immutable values must use `Box<T>` explicitly. Hand-written
-`RawValueRepresentation<Self>` conformances remain useful for retroactively
-conforming raw-value types declared in other modules.
-
-Macro-generated witnesses and accessors use `@inlinable` where their referenced
-storage permits it. Public conversion witnesses retain the attribute only when
-every encoded field is public or `@usableFromInline`; the backing storage
-generated for a public `@Box` property satisfies that requirement. Private and
-fileprivate witnesses omit the attribute because Swift does not permit it.
-Protocol witnesses for a file-scope private type must themselves be
-`fileprivate`. A private nested type cannot be named by the generated file-scope
-extension, so `@Generic` diagnoses it and requires `fileprivate` access.
-
-The `T2`–`T16` tuple helpers in `Support/Tuple.swift` are conveniences for
-hand-written conformances. `Product` can be nested directly when another shape
-is preferable.
-
-## The `ArrayData` Protocol
-
-`ArrayData` describes how a raw representation manages memory within the SoA
-buffer. Application-defined element types should normally conform only to
-`Generic`, decomposing into the supplied representations. The protocol is
-public and does not prohibit external conformances, but those are intended only
-for specialized physical layouts and must uphold the storage and lifetime
-requirements. Key supplied implementations:
-
-| Type | Buffer | Notes |
-|------|--------|-------|
-| Primitives (`Buffer == UnsafeMutablePointer<Self>`) | `UnsafeMutablePointer<Self>` | Typed initialization and direct indexing |
-| `Unit` | `Void` | Zero-byte, all operations are no-ops |
-| `Box<T>` | `UnsafeMutablePointer<T>` | Manual init/deinit (ref-counted), no memcpy |
-| `Product<A, B>` | `(A.Buffer, B.Buffer)` | Recursive: reserves space for both A and B back-to-back |
-| `RawValueRepresentation<T>` | `T.RawValue.Buffer` | Delegates storage to the raw value while retaining `T` as type-level validation metadata |
-| `SIMD<N>` | `UnsafeMutablePointer<Self>` | Stored as atomic blobs, **not** flattened to SoA |
-
-### Cross-module specialization
-
-Public representation conversions, `ArrayData` witnesses, and collection
-operations on the element-access path are `@inlinable`. This exposes their
-bodies to optimized clients so Swift can specialize the recursive
-representation operations and reduce an element transformation to direct SoA
-buffer accesses. Small forwarding constructors and accessors follow the same
-rule. The project uses `@inlinable`, rather than the underscored
-`@_alwaysEmitIntoClient`, as the ordinary cross-module optimization contract.
-
-Inlining is not part of the policy for binary encoding and decoding, textual
-descriptions, or other once-per-array control paths. In particular,
-`firstInvalidElement` may scan decoded storage, but it is a safety check at the
-binary I/O boundary rather than an element-processing primitive. The internal
-layout helpers `getRawSize` and `reserveCapacity` are also intentionally opaque:
-they run once per allocation, while their `ArrayData` callers remain
-`@inlinable`.
-
-`@inline(__always)` is reserved for a measured compiler workaround. Swift 6.2
-requires it on `MultiArray.init(count:with:)` to expose the loop generated by
-`map`; `scripts/check-vectorization.sh` compiles an optimized external client
-and verifies the resulting vector IR. Any future exception to the general rule
-must likewise name the check or measurement that requires it.
-
-## Binary snapshots and representation validation
-
-Binary type tags describe only the physical `RawRepresentation`, never the
-surface Swift type. Consequently a `UInt8` snapshot and a snapshot of a
-`UInt8`-backed enum have identical tags and layouts. This is intentional: the
-format is a representation-level memory snapshot rather than a nominal schema.
-
-`RawValueRepresentation<T>` prevents that choice from compromising safety. Its
-`BinaryArrayData` conformance delegates the type tag and buffer layout to
-`T.RawValue`, but validates each raw value with `T(rawValue:)` after the payload
-copy. `Product` composes this validation recursively, so a constrained enum
-nested inside a product is validated without help from the surface type or a
-macro. The decoder publishes the element count only after validation succeeds;
-an invalid value throws `BinaryMultiArrayError.invalidRawRepresentation` at the
-decode boundary.
-
-## Storage Layout
-
-```
+```text
 MultiArray<Element>
-  └── arrayData: MultiArrayData<Element.RawRepresentation>  (reference-counted class)
-        ├── count: Int
-        ├── capacity: Int  (determines field offsets)
-        ├── context: UnsafeMutableRawPointer  (single heap allocation)
-        └── storage: A.Buffer  (tuple of typed pointers into context)
+  └── MultiArrayData<Element.RawRepresentation> (reference-counted owner)
+        ├── count: initialized prefix length
+        ├── capacity: allocation extent
+        ├── context: one heap allocation
+        └── storage: typed field pointers into context
 
-Single allocation (context):
-  [Field_A_data...][padding?][Field_B_data...][padding?][Field_C_data...]
+context: [field A × capacity][alignment gap][field B × capacity]...
 ```
 
-The layout is computed by walking the `Product` tree twice, and the two walks
-must agree: `rawSize(capacity:from:)` accumulates alignment padding and strides
-to size the allocation up front, then `reserve(capacity:from:)` walks it again
-to carve out the aligned regions and hand back the tuple of typed pointers.
-Padding between regions is zero-initialized.
+Two recursive walks must agree: `rawSize(capacity:from:)` calculates the end
+offset, and `reserve(capacity:from:)` carves out the corresponding typed regions.
+Both follow scalar fields, not the size of an opaque nested product. The base
+allocation is 16-byte aligned; field alignment must not exceed that alignment.
+Sizing validates nonnegative inputs and representable arithmetic before memory
+is reserved. Inter-column alignment gaps are zeroed.
 
-Capacity determines the allocation layout; count determines the initialized
-prefix in every field, collection bounds, and destruction. Partial-prefix
-construction retains its original allocation without normalization or copying.
-Binary snapshots always use the count-sized layout: when count equals capacity,
-encoding copies the allocation directly; otherwise `BinaryArrayData.appendPayload`
-recursively copies only each field's initialized prefix and emits zero alignment
-padding. Equal initialized representations produce identical snapshots regardless
-of unused capacity. Decoding allocates exact-count storage.
+The central invariant is `0 <= count <= capacity`. **Count controls collection
+bounds and destruction; capacity controls field offsets.** A partially filled
+allocation cannot be interpreted using count-sized offsets. Publishing a prefix
+therefore changes count without relocating fields or reducing capacity.
 
-Sizing recursively follows the same scalar-field layout as reservation, including
-nested products. `rawSize` returns `nil` for negative capacities or offsets,
-overflowing arithmetic, or field alignment above the allocation's 16-byte
-alignment. Allocation validates the complete layout before reserving fields;
-binary decoding reports an overflowing layout as `BinaryMultiArrayError.overflow`.
+## Ownership and publication
 
-## Mutation and ownership
+`MultiArray` has value semantics over a reference-counted allocation. Copies
+initially share storage; all mutations must pass through `_prepareForMutation()`.
+Shared storage detaches by copying each initialized field into a new allocation
+with `capacity == count`. Scalar columns use bulk byte copies; boxed columns use
+typed copies that retain their values. Uniquely owned storage keeps its capacity.
+The collection is fixed-size even when its allocation has unused capacity.
 
-`MultiArrayData` is a class, so assigning a `MultiArray` shares the buffer.
-`MultiArray` nevertheless has value semantics: before indexed mutation,
-`_prepareForMutation()` checks whether the buffer is uniquely referenced and
-deep-copies every field buffer when it is shared. Scalar fields are copied as
-bytes, while `Box` fields are initialized as values so their payloads are
-retained correctly. All current and future operations that write to
-`arrayData` must route through this helper.
+Unfinished storage has a distinct cleanup owner until it can publish a valid
+prefix. Prefix construction can use count-based destruction. Arbitrary-order
+construction needs per-index tracking only for representations that require
+destruction: `Box` does, and `Product` composes that requirement. Trivial scalar
+storage can be abandoned without element cleanup. Keeping this capability in
+`PartialInitializationArrayData` avoids imposing it on existing `ArrayData`
+conformers. The async owner keeps the storage count at zero until publication,
+so scattered cleanup and ordinary prefix destruction cannot both release the
+same element. Caller obligations are documented in
+[Constructing Arrays](../Sources/MultiArray/MultiArray.docc/Articles/ConstructingArrays.md).
 
-The collection is currently fixed-size, but its allocation may have unused
-capacity after partial-prefix construction. Detaching shared storage copies
-only the initialized fields into a new allocation with `capacity == count`.
-Mutation of uniquely owned storage retains its existing capacity.
+`MultiArrayBuffer` deliberately has reference semantics and no CoW. This keeps
+reusable scratch storage separate from value-semantic snapshots. Retaining its
+owner keeps the allocation and boxed values alive; sharing raw pointers alone
+does not. There is no zero-copy conversion between these owners while mutable
+aliases can exist.
 
-`MultiArray` conditionally conforms to `@unchecked Sendable` when both its
-element and raw representation are `Sendable`. An immutable snapshot can cross
-isolation domains for concurrent reads; separately owned copies can detach and
-mutate concurrently. This does not permit concurrent access to the same mutable
-variable, nor sharing an unsafe mutable buffer view between tasks.
+### Transferability
 
-`MultiArrayBuffer` is the separate fixed-size, reference-semantic scratch
-owner. It holds one `MultiArrayData` allocation directly and performs checked
-indexed reads and in-place writes without CoW or uniqueness checks. The owner
-has no `Sendable` conformance. A concurrency adapter may retain it inside a
-small audited unchecked-sendable endpoint only when its scheduler guarantees
-that concurrent writes and read/write pairs use disjoint logical indices;
-overlapping access requires synchronization. Retaining the owner, rather than
-only its raw pointers, keeps every field allocation and boxed value alive for
-the endpoint's lifetime. No zero-copy conversion to or from `MultiArray` is
-provided while aliases can exist.
+A transferable snapshot requires both `Element: Sendable` and
+`Element.RawRepresentation: Sendable`. The surface condition covers reconstructed
+values; the representation condition covers stored logical values. An open
+`Generic` conformance can otherwise hide non-sendable state in its representation.
+Neither condition makes raw pointers sendable. The owner or scoped view still
+needs audited lifetime and synchronization guarantees.
 
-### Transferable representations
+Standard `Sendable` constraints are used rather than a new representation
+protocol: Swift does not allow a conditional conformance to a non-marker protocol
+to depend on the marker protocol `Sendable`. That would prevent the desired
+`Box<T>` refinement for all sendable payloads. The remaining operational purity
+obligations belong to the `Generic` and `ArrayData` contracts.
 
-Transferability has two independent type-level conditions. A transferable
-`MultiArray<Element>` requires both `Element: Sendable` and
-`Element.RawRepresentation: Sendable`. The first covers the value reconstructed
-and returned by a read; the second covers the logical values held in the stored
-representation. Requiring only the surface element is insufficient because the
-open `Generic` protocol can select a representation containing hidden
-non-`Sendable` state.
+`BinaryArrayData` is orthogonal to transferability: it excludes boxed values,
+including sendable payloads such as `String`, and cannot prove that an external
+conversion or storage implementation is safe for concurrent reads. See
+[Using Collections](../Sources/MultiArray/MultiArray.docc/Articles/UsingCollections.md)
+for isolation and shared-scratch usage.
 
-These constraints do not make `Element.RawRepresentation.Buffer` sendable.
-Built-in buffers contain raw pointers, so the owner or scoped view must still
-provide audited lifetime and synchronization guarantees. `ArrayData`
-conformers used across isolation boundaries have an additional semantic
-obligation: `read(_:at:)` must not mutate shared state or expose non-`Sendable`
-state hidden by the buffer. `Generic` conversions must likewise be pure with
-respect to shared state.
+## Native snapshots
 
-Swift cannot express that operational promise with a normal protocol
-refinement while retaining `Box<Element>` for every `Element: Sendable`:
-conditional conformance to a non-marker protocol may not depend on the marker
-protocol `Sendable`, and user protocols that inherit `Sendable` are not
-themselves treated as marker protocols. The design therefore uses standard
-`Sendable` constraints and documents the remaining unsafe-code obligation
-rather than introducing an underscored marker or unchecked representation
-conformances.
+Binary tags describe the physical representation, not the surface Swift type.
+This permits representation-compatible snapshots without a nominal schema.
+`RawValueRepresentation<T>` preserves domain validation despite delegating tags
+and layout to the raw value; `Product` composes validation. Decoding publishes
+count only after validation, so invalid representations never become live
+collection elements.
 
-The built-in representation tree composes checked `Sendable` conformances:
-`Unit`, boxes with sendable payloads, products and sums of sendable children,
-raw-value representations with a sendable raw value, and the `T2`–`T16`
-surface helpers. Checked conformances must be declared in the source file that
-defines their type, so they intentionally remain colocated rather than using
-`@unchecked` conformances in a central extension file.
+Snapshots use a canonical count-sized layout independent of unused capacity.
+Exact-count storage can be copied directly; partially filled storage requires
+field-wise prefix copies and zeroed alignment gaps. This pays for normalization
+only at the serialization boundary, not during construction. Decoding allocates
+exact-count storage. Compatibility limits and failure behavior belong in
+[Serialization](../Sources/MultiArray/MultiArray.docc/Articles/Serialization.md).
 
-`BinaryArrayData` remains orthogonal. Binary snapshots deliberately exclude all
-`Box` values, including safe sendable payloads such as `String`, while binary
-encodability alone cannot prove that an external `Generic` conversion or
-`ArrayData` implementation is safe for concurrent access.
+## Cross-module specialization
 
-## Uninitialized construction
+Public representation conversions, `ArrayData` witnesses, and element-processing
+operations are generally `@inlinable`. Optimized clients can then specialize the
+representation tree into direct field accesses. Binary I/O, textual descriptions,
+and once-per-allocation layout helpers are intentionally outside that policy.
 
-The synchronous `init(unsafeUninitializedCapacity:initializingWith:)` supports
-bulk construction by handing its closure an
-`UnsafeUninitializedMultiArrayBuffer<Element>` view over the raw storage,
-typed in terms of the surface `Element` rather than its `RawRepresentation`.
-The view is passed by value; its immutable fields still refer to writable
-storage, so only the initialized-prefix count needs `inout`.
-`UninitializedMultiArrayData` remains a deprecated source-compatible alias.
-The closure initializes a prefix of that storage and reports its length
-through an `inout` count. It must report the initialized prefix even when it
-throws, normally with `defer`; `MultiArrayData.deinit` uses that count to
-destroy exactly the initialized elements. Reporting too few elements leaks
-their resources. The reported count is checked against `0...capacity`, and a
-count outside that range traps, including when the closure throws.
-
-`PartialInitializationArrayData` is a separate, opt-in refinement of
-`ArrayData` for arbitrary-order construction. It provides
-`deinitialize(_:at:)`, which destroys one initialized logical element, and
-`requiresInitializationTracking`, which tells that constructor whether cleanup
-needs per-element flags. Machine scalars, SIMD, and `Unit` need no flags;
-`Box` always does, and `Product` needs them when either child does. A
-`RawValueRepresentation` inherits the trait from its raw value. This leaves
-existing external `ArrayData` conformances source-compatible but does not
-grant them the arbitrary-order initializer automatically.
-
-The async initializer accepts a `sending` body and initializes directly into
-the final allocation in any order. A small owner keeps the allocation alive
-across suspension. The body reports an initialized prefix through an `inout`
-count, initially zero, bounded by capacity on both success and throw. The owner
-holds the storage's element count at zero until success, then publishes the
-reported prefix without moving elements or reducing capacity. On failure it
-destroys only initialized tracked slots and rethrows the original
-typed error. Tracked storage has one zeroed byte per logical index; the flag
-is set only after its element is fully initialized. Packed bits would make
-writes to flags for adjacent indices modify the same byte, creating a race
-even when the elements themselves occupy disjoint storage. Trivial
-representations allocate no flags, so the caller's completeness promise is
-not dynamically checked for them. The synchronous prefix initializer still
-uses its count and prefix cleanup; the refinement does not change its contract.
-
-The initialization view is `@unchecked Sendable` only when both the surface
-element and raw representation are `Sendable`. Distinct indices may then be
-initialized concurrently; the caller must join all child tasks before the
-body completes. Every index in the reported prefix must be initialized exactly
-once, with no initialized elements outside that prefix on success, and the view
-must not escape the body. These are unsafe caller obligations: same-index
-races and escaped use cannot be enforced. Without a race, tracked duplicate
-initialization, missing prefix slots, and initialized slots outside the prefix
-trigger debug assertions; release builds do not check them. The flags remain
-necessary in every build for cleanup on throw.
-Cancellation only triggers cleanup when the body observes it and throws its
-declared failure type.
+`@inline(__always)` is reserved for measured compiler workarounds:
+`MultiArray.init(count:with:)` needs it to expose the map loop to Swift 6.2's
+vectorizer. `scripts/check-vectorization.sh` verifies an optimized external
+client; future exceptions should likewise have a check or measurement. The
+ordinary policy uses `@inlinable`, not `@_alwaysEmitIntoClient`. See
+[Storage and Vectorization](../Sources/MultiArray/MultiArray.docc/Articles/StorageAndVectorization.md)
+for the executable example and target-dependent SIMD widths.

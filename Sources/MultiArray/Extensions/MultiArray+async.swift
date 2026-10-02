@@ -15,33 +15,30 @@
 public extension MultiArray where Element.RawRepresentation: PartialInitializationArrayData {
     /// Creates an array by initializing a prefix of its storage asynchronously.
     ///
-    /// The body receives a view of the entire uninitialized capacity and an
-    /// `inout` initialized count, initially zero. Before returning successfully,
-    /// it must initialize each index in `0..<initializedCount` exactly once,
-    /// in any order, and leave every index outside that prefix uninitialized.
-    /// The resulting array has the reported count and retains the requested
-    /// capacity, without copying or moving its elements.
+    /// The body receives the uninitialized capacity and an `inout` count starting
+    /// at zero. On success, initialize each index in `0..<initializedCount`
+    /// exactly once, in any order, and no slots outside it. The array publishes
+    /// that prefix without moving elements or reducing allocation capacity.
     ///
     /// When both `Element` and its raw representation are `Sendable`, child
-    /// tasks may initialize distinct indices concurrently. Each index must have
-    /// a single writer. The body must join all child work before returning or
-    /// throwing, including after cancellation or a child failure; no task may
-    /// continue accessing the view afterward. The view must not escape the body.
-    /// Update the initialized count in the parent after joining child work;
-    /// child tasks must not concurrently access the `inout` count. Concurrent
-    /// writes to the same index or escaped use are undefined behavior.
+    /// tasks may initialize distinct indices concurrently, with one writer per
+    /// index. Join all child work before returning or throwing, including after
+    /// cancellation or child failure. Update the count only in the parent after
+    /// joining; child tasks must not concurrently access it. The view must not
+    /// escape or remain in use afterward. Same-index races and escaped use are
+    /// undefined behavior.
     ///
     /// The reported count must be between zero and capacity, inclusive;
-    /// otherwise, the initializer traps on both success and throw. If the body
-    /// throws, initialized tracked elements are destroyed using per-index flags,
-    /// not the reported count, and the original typed error is rethrown. Thus,
-    /// scattered initialization before a throw need not form a prefix.
+    /// otherwise, the initializer traps on success or throw. Failure destroys
+    /// initialized tracked slots, independently of the reported count, and
+    /// rethrows the body's typed error; scattered writes need not form a prefix.
     /// Cancellation takes effect only when the body observes it and throws.
     ///
     /// In debug builds, tracked duplicate writes, missing prefix slots, and
     /// initialized slots outside the reported prefix trigger assertions when
     /// there is no race. Release builds and representations without tracking
     /// rely on the caller to uphold the initialization contract.
+    /// See <doc:ConstructingArrays> for examples.
     ///
     /// - Parameters:
     ///   - count: The maximum number of elements that can be initialized.
@@ -81,6 +78,8 @@ private final class ScatteredInitializationOwner<Element>
         self.capacity = capacity
         self.data = MultiArrayData<Element.RawRepresentation>(unsafeUninitializedCapacity: capacity)
         if Element.RawRepresentation.requiresInitializationTracking, capacity > 0 {
+            // One byte per index, not packed bits: adjacent element writers
+            // must not perform read-modify-write on the same flag byte.
             let flags = UnsafeMutablePointer<UInt8>.allocate(capacity: capacity)
             flags.initialize(repeating: 0, count: capacity)
             self.flags = flags

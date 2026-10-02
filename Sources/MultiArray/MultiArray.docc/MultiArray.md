@@ -13,8 +13,9 @@ The ``Generic()`` macro derives the required representation:
 
 @Snippet(path: "Guide", slice: "point")
 
-Use a `MultiArray` where you would otherwise use an `Array`, provided that the
-element type conforms to ``Generic``.
+Use a `MultiArray` for fixed-size, field-wise processing when the element
+conforms to ``Generic`` and its raw representation conforms to ``ArrayData``.
+It supports random access and element replacement, but not append or resize.
 
 ## Topics
 
@@ -22,6 +23,8 @@ element type conforms to ``Generic``.
 
 - <doc:RepresentingCustomTypes>
 - <doc:ConstructingArrays>
+- <doc:UsingCollections>
+- <doc:Serialization>
 - <doc:StorageAndVectorization>
 - <doc:SupportAPI>
 

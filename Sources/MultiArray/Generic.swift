@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A simple datatype-generic protocol. This protocol is intended to be _open_,
-// in that users can add conformance for their own data types.
-//
-// Datatype-generic functions are based on the idea of converting values of
-// datatype `T` into corresponding values of a (nearly) isomorphic type `Rep T`.
-// The type `Rep T` is built from a limited set of type constructors, all
-// provided by this module. A datatype-generic function is then an overloaded
-// function with instances for most of these type constructors, together with a
-// wrapper that performs the mapping between `T` and `Rep T`. By using this
-// technique, we merely need a few generic instances in order to implement
-// functionality that works for any representable type.
-//
-// Representable types are members of the `Generic` protocol, which defines the
-// type `RawRepresentation` as well as conversion functions `from` and `to`.
-// Typically, you will not define `Generic` instances by hand, but have the
-// `@Generic` macro derive them for you.
-//
-// A true sum-of-products (or rather, product-of-sums) representation would
-// probably be better, but this is good enough for now.
+/// Converts an element to and from an equivalent storage representation.
+///
+/// Conversions must preserve the logical value. For cross-isolation use, they
+/// must not mutate shared state or expose hidden non-sendable state. Derive a
+/// conformance with `@Generic`, or compose the supplied representation types.
 public protocol Generic {
+    /// The representation used to store this value.
     associatedtype RawRepresentation
 
+    /// This value expressed in its storage representation.
     var rawRepresentation: RawRepresentation { get }
+    /// Reconstructs a value from a valid storage representation.
     init(from rep: RawRepresentation)
 }
 
@@ -48,21 +37,16 @@ extension Generic where RawRepresentation == Self {
 
 /// Derives `Generic` for a struct or raw-value enum.
 ///
-/// Structs are represented by their stored, explicitly typed properties.
-/// Stored properties inside conditional compilation blocks and stored `let`
-/// properties initialized at their declaration are diagnosed, not excluded.
-/// For conditional stored properties, write the conformance by hand instead
-/// of applying this macro.
-/// Initialize immutable fields in an initializer. For generic structs, put the
-/// `Generic` constraints on the struct declaration
-/// itself. Raw-value enums use `RawValueRepresentation<Self>` and cannot have
-/// associated values. Because macros cannot resolve types, the first inherited
-/// type is treated as a possible raw type; protocol-only inheritance is rejected
-/// later by the compiler. The complete conformance is emitted in an extension
-/// so the struct retains its synthesized memberwise initializer. Public
-/// conversion witnesses are `@inlinable` only when every encoded field is
-/// public or usable from inline code. A nested type cannot be `private` because
-/// its generated conformance extension is file-scoped; use `fileprivate` instead.
+/// Structs use explicitly typed stored properties and retain their memberwise
+/// initializer. Static and computed properties are excluded. Conditional stored
+/// properties and declaration-initialized stored `let` properties are unsupported;
+/// write a manual conformance or initialize immutable fields in an initializer.
+/// Generic constraints belong on the original declaration.
+///
+/// Enums must have a raw value and no associated values. Nested types must be
+/// at least `fileprivate`. Public conversion witnesses are `@inlinable` only when
+/// every represented field is public or `@usableFromInline`.
+/// See <doc:RepresentingCustomTypes> for examples and declaration limitations.
 @attached(extension, conformances: Generic, names: arbitrary)
 public macro Generic() = #externalMacro(module: "MultiArrayMacros", type: "GenericExtensionMacro")
 

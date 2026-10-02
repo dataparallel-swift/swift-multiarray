@@ -21,24 +21,38 @@ import Foundation
 /// add an `ArrayData` conformance merely to make an element storable.
 /// Custom conformances are a low-level escape hatch for specialized physical
 /// storage layouts; incorrect memory management can violate memory safety.
+/// Operations must preserve value ownership and support the supplied capacity
+/// with independent logical indices. For cross-isolation use, reads must not
+/// mutate shared state or expose hidden non-sendable values, and disjoint-index
+/// operations must not race through shared backing state.
 public protocol ArrayData {
+    /// Typed storage referring to regions of the owning allocation.
     associatedtype Buffer
 
+    /// Initializes one previously uninitialized logical element.
     static func initialize(_ arrayData: Buffer, at: Int, to value: Self)
 
     /// Initializes the first `count` elements of an uninitialized destination
     /// from initialized, nonoverlapping source storage. Implementations must
     /// preserve value ownership, including retaining reference-valued fields.
     static func initialize(_ arrayData: Buffer, from: Buffer, count: Int)
+    /// Initializes a prefix of uninitialized storage with copies of a value.
     static func initialize(_ arrayData: Buffer, repeating: Self, count: Int)
+    /// Destroys exactly the initialized prefix, preserving unused capacity.
     static func deinitialize(_ arrayData: Buffer, count: Int)
 
+    /// Reads an initialized logical element without changing storage.
     static func read(_ arrayData: Buffer, at index: Int) -> Self
+    /// Replaces an initialized element, releasing its previous value as needed.
     static func write(_ arrayData: Buffer, at index: Int, to value: Self)
 
+    /// Reserves typed field regions and advances `context` to their end.
+    /// The regions must agree with `rawSize`; alignment gaps must be zeroed.
     static func reserve(capacity: Int, from context: inout UnsafeMutableRawPointer) -> Buffer
+
     /// Returns the end offset, or `nil` for invalid capacity, offset,
-    /// alignment, or size arithmetic.
+    /// alignment, or size arithmetic. Layout must match `reserve` within a
+    /// 16-byte-aligned allocation.
     static func rawSize(capacity: Int, from offset: Int) -> Int?
 }
 
@@ -50,11 +64,10 @@ public protocol ArrayData {
 /// be safe to abandon partially initialized storage without destruction.
 /// Conformers returning `true` must destroy exactly one initialized logical
 /// element in `deinitialize(_:at:)`.
-///
-/// Flags for tracked elements must be separate bytes, not packed bits: writes
-/// to flags for distinct indices must not race through a shared byte.
 public protocol PartialInitializationArrayData: ArrayData {
+    /// Whether abandoning initialized slots requires element destruction.
     static var requiresInitializationTracking: Bool { get }
+    /// Destroys one initialized logical element without touching other indices.
     static func deinitialize(_ arrayData: Buffer, at index: Int)
 }
 
@@ -190,10 +203,7 @@ public extension SIMD {
     typealias Buffer = UnsafeMutablePointer<Self>
 }
 
-// Internal helpers
-//
-// We could also reduce the duplication here if we could treat addresses as Ints
-// and not magically unsafe entities to be scared of
+// Internal layout helpers
 
 @usableFromInline
 internal let multiArrayAllocationAlignment = 16
@@ -213,6 +223,8 @@ internal func getRawFieldLayout<T>(for _: T.Type, count: Int, from offset: Int) 
     guard count >= 0,
           offset >= 0,
           alignment <= multiArrayAllocationAlignment else { return nil }
+    // Swift field alignments are powers of two. Since each divides the aligned
+    // allocation base, aligning this relative offset also aligns its address.
     let padding = (alignment - (offset & (alignment - 1))) & (alignment - 1)
     let (begin, beginOverflow) = offset.addingReportingOverflow(padding)
     let (byteCount, byteCountOverflow) = count.multipliedReportingOverflow(by: MemoryLayout<T>.stride)

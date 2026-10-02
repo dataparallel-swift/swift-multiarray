@@ -15,6 +15,7 @@
 import Foundation
 
 // Unit: constructors without arguments and no in-memory representation.
+/// A zero-field representation that occupies no element storage.
 public struct Unit {
     @inlinable
     public init() {}
