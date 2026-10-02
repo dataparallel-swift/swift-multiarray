@@ -14,11 +14,16 @@
 
 import Foundation
 
-// Products: encode multiple arguments to constructors.
+/// Combines two representations into separate field columns.
+///
+/// Nest products to represent additional fields without opaque struct padding.
 public struct Product<A, B> {
+    /// The first component.
     public let _0: A
+    /// The second component.
     public let _1: B
 
+    /// Combines two values.
     @inlinable
     public init(_ lhs: A, _ rhs: B) {
         self._0 = lhs
