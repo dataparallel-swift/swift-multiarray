@@ -14,16 +14,11 @@
 
 /// A fixed-size, reference-semantic struct-of-arrays buffer for reusable scratch.
 ///
-/// Unlike `MultiArray`, copies of this owner refer to the same storage: indexed
-/// assignments write in place and never detach. Concurrent reads are safe when
-/// the element and representation obey their sendability contracts. Concurrent
-/// reads and writes, or multiple writes, require disjoint logical indices;
-/// overlapping access needs external synchronization. The owner does not
-/// conform to `Sendable`: an adapter crossing isolation boundaries must audit
-/// and uphold that disjoint-access contract itself.
-///
-/// Keep the owner alive for as long as an adapter endpoint accesses its storage.
-/// The owner releases the allocation and its initialized elements on deinit.
+/// All handles share storage; indexed writes never detach. This owner is not
+/// `Sendable`. A cross-isolation adapter must keep it alive and uphold element
+/// and representation sendability contracts. Concurrent read/write pairs or
+/// multiple writes require disjoint logical indices, or external synchronization
+/// for overlapping access. See <doc:UsingCollections> for examples.
 public final class MultiArrayBuffer<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
     internal let arrayData: MultiArrayData<Element.RawRepresentation>

@@ -19,7 +19,7 @@ synchronous-prefix and asynchronous arbitrary-order prefix contracts.
 ``MultiArrayBuffer`` is separate reusable scratch storage. It has reference
 semantics and writes in place, unlike the copy-on-write `MultiArray`. An
 adapter that shares it across isolation domains must guarantee disjoint-index
-access or synchronize overlapping operations.
+access or synchronize overlapping operations. See <doc:UsingCollections>.
 
 ## Advanced protocols and helpers
 
@@ -30,7 +30,8 @@ storable. A custom conformance is a low-level escape hatch for a specialized
 physical layout, such as a bit-packed column, and incorrect memory management
 can violate memory safety. ``BinaryArrayData`` is a further opt-in for
 representations that can be safely encoded and decoded as a native binary
-snapshot. ``BinaryMultiArrayError`` reports snapshot decoding failures.
+snapshot. ``BinaryMultiArrayError`` reports snapshot decoding failures. See
+<doc:Serialization> for format limitations and examples.
 
 The `T2` through `T16` tuple-like types help write representations with
 multiple fields manually. They remain public and usable, though `@Generic`
