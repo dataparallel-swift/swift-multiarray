@@ -19,7 +19,8 @@ swiftlint --quiet --no-cache \
   "${ROOT_DIR}/Package.swift" \
   "${ROOT_DIR}/Sources" \
   "${ROOT_DIR}/Tests" \
-  "${ROOT_DIR}/Benchmarks"
+  "${ROOT_DIR}/Benchmarks" \
+  "${ROOT_DIR}/Snippets"
 
 printf 'preflight: checking formatting\n'
 "${ROOT_DIR}/scripts/format.sh" --lint

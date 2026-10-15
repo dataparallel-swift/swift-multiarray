@@ -14,9 +14,13 @@
 
 import Foundation
 
-// Storage of datatype-generic values with an underlying struct-of-arrays
-// representation. This is intended to be _closed_, as it only operates over the
-// fixed set of Generic representation types.
+/// Storage operations for a raw struct-of-arrays representation.
+///
+/// To store an application-defined element, conform it to `Generic` and
+/// decompose it into the supplied primitive and representation types. Do not
+/// add an `ArrayData` conformance merely to make an element storable.
+/// Custom conformances are a low-level escape hatch for specialized physical
+/// storage layouts; incorrect memory management can violate memory safety.
 public protocol ArrayData {
     associatedtype Buffer
 

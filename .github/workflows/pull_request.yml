@@ -11,19 +11,40 @@ jobs:
       - name: SwiftFormat
         run: scripts/format.sh --lint --reporter github-actions-log
 
-  test-ubuntu-latest:
-    name: Test Swift 6.2 Ubuntu Latest
+  test-linux:
+    name: Test Swift ${{ matrix.swift }}
     runs-on: ubuntu-latest
-    container: swift:6.2
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - swift: "6.1"
+            image: swift:6.1-jammy
+          - swift: "6.2"
+            image: swift:6.2.4-jammy
+          - swift: "6.3"
+            image: swift:6.3.3-noble
+    container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Run Tests
         run: scripts/test-linux.sh -Xswiftc -warnings-as-errors
+      - name: Check Vectorization
+        run: scripts/check-vectorization.sh
 
   test-macos-26:
-    name: Test Swift 6.2 macos-26
+    name: Test macOS
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: Run Tests
         run: scripts/test-macos.sh -Xswiftc -warnings-as-errors
+
+  docs:
+    name: Check DocC catalog
+    runs-on: ubuntu-latest
+    container: swift:6.3.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build documentation
+        run: scripts/build-docs.sh

@@ -70,8 +70,12 @@ is preferable.
 
 ## The `ArrayData` Protocol
 
-`ArrayData` is a **closed** protocol describing how a type manages its own
-memory within the SoA buffer. Key implementations:
+`ArrayData` describes how a raw representation manages memory within the SoA
+buffer. Application-defined element types should normally conform only to
+`Generic`, decomposing into the supplied representations. The protocol is
+public and does not prohibit external conformances, but those are intended only
+for specialized physical layouts and must uphold the storage and lifetime
+requirements. Key supplied implementations:
 
 | Type | Buffer | Notes |
 |------|--------|-------|
