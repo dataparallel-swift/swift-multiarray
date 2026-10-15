@@ -50,7 +50,6 @@
 --rules linebreaks
 --rules modifierOrder
 --rules numberFormatting
---rules preferKeyPath
 --rules redundantBackticks
 --rules redundantBreak
 --rules redundantExtensionACL
@@ -90,7 +89,6 @@
 --rules void
 --rules wrap
 --rules wrapArguments
---rules wrapAttributes
 --rules wrapMultilineStatementBraces
 --rules wrapSingleLineComments
 --rules yodaConditions

@@ -1,10 +1,32 @@
-identifier_name:
-  excluded:
-    - _0 # reminiscent of tuple.0
-    - _1 # reminiscent of tuple.1
-    - i # canonical loop variable
-    - j # canonical loop variable
-    - k # canonical loop variable
-    - x # canonical axis label
-    - y # canonical axis label
-    - z # canonical axis label
+excluded:
+  - ${PWD}/**/.build
+  - ${PWD}/.git
+
+switch_case_alignment:
+  indented_cases: true
+
+line_length:
+  warning: 140
+  ignores_interpolated_strings: true
+
+nesting:
+  type_level: 3
+
+file_length:
+  ignore_comment_only_lines: true
+
+force_unwrapping:
+  severity: error
+
+opt_in_rules:
+  - force_unwrapping
+
+disabled_rules:
+  - identifier_name
+  - opening_brace
+  - statement_position
+  - syntactic_sugar
+  - todo
+  - trailing_comma
+  - type_body_length
+  - type_name

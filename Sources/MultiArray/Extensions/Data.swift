@@ -143,6 +143,7 @@ extension MultiArray where Element.RawRepresentation: BinaryArrayData {
             // This force unwrap is safe because we've already accessed the
             // underlying Data pointer many times before this point, so it can
             // not possibly be nil.
+            // swiftlint:disable:next force_unwrapping
             self.arrayData.context.copyMemory(from: $0.baseAddress! + offset, byteCount: expectedByteCount)
         }
     }
