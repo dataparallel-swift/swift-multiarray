@@ -19,5 +19,6 @@ import SwiftSyntaxMacros
 struct MultiArrayPlugins: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         GenericExtensionMacro.self,
+        BoxPropertyMacro.self,
     ]
 }
