@@ -20,6 +20,8 @@ public struct Unit {
     public init() {}
 }
 
+extension Unit: Sendable {}
+
 extension Unit: Generic {
     public typealias RawRepresentation = Self
 }
@@ -55,6 +57,14 @@ extension Unit: ArrayData {
         guard capacity >= 0, offset >= 0 else { return nil }
         return offset
     }
+}
+
+extension Unit: PartialInitializationArrayData {
+    @inlinable
+    public static var requiresInitializationTracking: Bool { false }
+
+    @inlinable
+    public static func deinitialize(_: Buffer, at _: Int) { /* no-op */ }
 }
 
 extension Unit: BinaryArrayData {

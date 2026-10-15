@@ -9,7 +9,7 @@ readonly CATALOG="${ROOT_DIR}/Sources/MultiArray/MultiArray.docc"
 readonly OUTPUT="${DOCC_BUILD_DIR}/MultiArray.doccarchive"
 readonly STATIC_OUTPUT="${DOCC_BUILD_DIR}/html"
 readonly DOCC_PORT="${DOCC_PORT:-0}"
-export SWIFT_IMAGE="${SWIFT_IMAGE:-docker.io/library/swift:6.3.3-noble}"
+export SWIFT_IMAGE="${SWIFT_IMAGE:-docker.io/library/swift:6.4.0-noble}"
 
 usage() {
   cat <<EOF
@@ -29,7 +29,7 @@ Environment:
   SNIPPET_EXTRACT Path or command name for snippet-extract. If unset, use
                   Xcode's copy on macOS; on Linux, use PATH or build a pinned
                   copy.
-  SWIFT_IMAGE     The container image to use on macOS. Defaults to swift:6.3.3-noble.
+  SWIFT_IMAGE     The container image to use on macOS. Defaults to swift:6.4.0-noble.
 EOF
 }
 

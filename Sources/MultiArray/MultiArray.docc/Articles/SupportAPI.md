@@ -11,10 +11,15 @@ representation constructors, useful when a derived representation is not
 appropriate. ``Box()`` derives storage for a mutable boxed property. See
 <doc:RepresentingCustomTypes> for examples and limitations.
 
-``UninitializedMultiArrayData`` is the buffer passed to the synchronous
-``MultiArray/init(unsafeUninitializedCapacity:initializingWith:)``. It is an
-advanced construction API: initialize only the reported prefix and report its
-length even if the closure throws.
+``UnsafeUninitializedMultiArrayBuffer`` is the view passed to the unsafe
+construction initializers. The old name, `UninitializedMultiArrayData`, remains
+available as a deprecated alias. See <doc:ConstructingArrays> for the distinct
+synchronous-prefix and asynchronous arbitrary-order prefix contracts.
+
+``MultiArrayBuffer`` is separate reusable scratch storage. It has reference
+semantics and writes in place, unlike the copy-on-write `MultiArray`. An
+adapter that shares it across isolation domains must guarantee disjoint-index
+access or synchronize overlapping operations.
 
 ## Advanced protocols and helpers
 
