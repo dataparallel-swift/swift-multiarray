@@ -29,13 +29,14 @@ struct DataTests {
         }
     }
 
-    @Test
-    func failVersion() throws {
+    @Test(arguments: [UInt8(1), UInt8(99)])
+    func failVersion(version: UInt8) throws {
         let array: MultiArray<Int> = [1, 2, 3]
         var encoded = array.encode()
-        encoded[4] = 99
+        #expect(encoded[4] == 2)
+        encoded[4] = version
 
-        #expect(throws: BinaryMultiArrayError.unsupportedVersion(99)) {
+        #expect(throws: BinaryMultiArrayError.unsupportedVersion(Int(version))) {
             _ = try MultiArray<Int>(data: encoded)
         }
     }
@@ -76,6 +77,59 @@ struct DataTests {
 
         #expect(throws: BinaryMultiArrayError.typeMismatch(expected: 0x35, actual: 0x15)) {
             _ = try MultiArray<Float32>(data: encoded)
+        }
+    }
+
+    @Test
+    func failCountWhoseLayoutOverflows() throws {
+        var encoded = MultiArray<Int64>().encode()
+        var count = UInt64(Int.max)
+        withUnsafeBytes(of: &count) { bytes in
+            encoded.replaceSubrange(8 ..< 16, with: bytes)
+        }
+        #expect(throws: BinaryMultiArrayError.overflow(count)) {
+            _ = try MultiArray<Int64>(data: encoded)
+        }
+    }
+
+    @Test
+    func decodeSlicedData() throws {
+        let original: MultiArray<Int32> = [10, 20, 30]
+        var framed = Data(repeating: 0xff, count: 7)
+        framed.append(original.encode())
+        let slice = framed[7...]
+
+        #expect(slice.startIndex == 7)
+        #expect(try MultiArray<Int32>(data: slice) == original)
+    }
+
+    @Test
+    func decodeEmptySlicedDataBeyondSliceLength() throws {
+        let original = MultiArray<Int32>()
+        var framed = Data(repeating: 0xff, count: 40)
+        framed.append(original.encode())
+        let slice = framed[40...]
+
+        #expect(slice.startIndex == 40)
+        #expect(slice.startIndex > slice.count)
+        #expect(try MultiArray<Int32>(data: slice) == original)
+    }
+
+    @Test
+    func slicedDataErrorsRemainTyped() throws {
+        var malformed = MultiArray<Int32>([1]).encode()
+        malformed[18] = 0xff
+        var framed = Data(repeating: 0xff, count: 40)
+        framed.append(malformed)
+        let slice = framed[40...]
+
+        #expect(throws: BinaryMultiArrayError.typeMismatch(expected: 0x15, actual: 0xff)) {
+            _ = try MultiArray<Int32>(data: slice)
+        }
+
+        let truncated = slice.prefix(18)
+        #expect(throws: BinaryMultiArrayError.truncated(index: 0, required: 19, total: 18)) {
+            _ = try MultiArray<Int32>(data: truncated)
         }
     }
 

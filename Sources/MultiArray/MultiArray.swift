@@ -34,10 +34,15 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
     /// produce each value.
     @inlinable
     public init<E: Error>(count: Int, with generator: (Int) throws(E) -> Element) throws(E) {
-        try self.init(unsafeUninitializedCapacity: count) { buffer throws(E) in
+        try self.init(unsafeUninitializedCapacity: count) { buffer, initializedCount throws(E) in
+            var initialized = 0
+            // This must also update the count when the generator throws:
+            // MultiArrayData.deinit deinitializes exactly this many elements.
+            defer { initializedCount = initialized }
             for i in 0 ..< count {
                 let value = try generator(i)
                 buffer.initializeElement(at: i, to: value)
+                initialized += 1
             }
         }
     }
@@ -69,15 +74,33 @@ public struct MultiArray<Element> where Element: Generic, Element.RawRepresentat
 
     /// Creates an array with the specified capacity, then calls the given
     /// closure with a buffer covering the array's uninitialized memory.
+    ///
+    /// The closure must initialize a prefix of the buffer and set
+    /// `initializedCount` to the length of that prefix. It must update
+    /// `initializedCount` even when it throws so that the initialized elements
+    /// can be deinitialized safely. The reported count must be between zero
+    /// and the requested capacity, inclusive; otherwise, the initializer traps.
+    ///
+    /// - Parameters:
+    ///   - count: The maximum number of elements that can be initialized.
+    ///   - initializingWith: A closure that initializes the buffer and reports
+    ///     the number of initialized elements.
     @inlinable
     public init<E: Error>(
         unsafeUninitializedCapacity count: Int,
-        initializingWith: (inout UninitializedMultiArrayData<Element>) throws(E) -> Void
+        initializingWith: (_ buffer: inout UninitializedMultiArrayData<Element>, _ initializedCount: inout Int) throws(E) -> Void
     ) throws(E) {
         precondition(count >= 0)
-        self.arrayData = .init(unsafeUninitializedCapacity: count)
+        let arrayData = MultiArrayData<Element.RawRepresentation>(unsafeUninitializedCapacity: count)
         var buffer = UninitializedMultiArrayData<Element>(arrayData.storage)
-        try initializingWith(&buffer)
+        defer {
+            precondition(
+                arrayData.count >= 0 && arrayData.count <= count,
+                "MultiArray initialized count must be between zero and capacity"
+            )
+        }
+        try initializingWith(&buffer, &arrayData.count)
+        self.arrayData = arrayData
     }
 }
 
@@ -106,8 +129,13 @@ public struct UninitializedMultiArrayData<Element> where Element: Generic, Eleme
 //
 @usableFromInline
 internal final class MultiArrayData<A: ArrayData> {
+    /// Determines the allocation layout and maximum storage capacity
     @usableFromInline
-    let count: Int
+    let capacity: Int
+
+    /// The number of elements actually initialised
+    @usableFromInline
+    var count: Int
 
     @usableFromInline
     let context: UnsafeMutableRawPointer
@@ -119,8 +147,13 @@ internal final class MultiArrayData<A: ArrayData> {
 
     @inlinable
     init(unsafeUninitializedCapacity count: Int) {
-        var context = UnsafeMutableRawPointer.allocate(byteCount: A.rawSize(capacity: count, from: 0), alignment: 16)
-        self.count = count
+        precondition(count >= 0, "MultiArray capacity must be nonnegative")
+        guard let byteCount = A.rawSize(capacity: count, from: 0) else {
+            preconditionFailure("MultiArray capacity cannot be represented by its storage layout")
+        }
+        var context = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: multiArrayAllocationAlignment)
+        self.count = 0
+        self.capacity = count
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
     }
