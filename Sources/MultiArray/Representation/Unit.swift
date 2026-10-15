@@ -17,7 +17,6 @@ import Foundation
 // Unit: constructors without arguments and no in-memory representation.
 public struct Unit {
     @inlinable
-    @_alwaysEmitIntoClient
     public init() {}
 }
 
@@ -41,24 +40,17 @@ extension Unit: ArrayData {
     public static func deinitialize(_: Self.Buffer, count _: Int) { /* no-op */ }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func read(_: Self.Buffer, at _: Int) -> Self { Unit() }
 
     @inlinable
-    // @_alwaysEmitIntoClient
     public static func write(_: Self.Buffer, at _: Int, to _: Self) { /* no-op */ }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func reserve(capacity: Int, from _: inout UnsafeMutableRawPointer) -> Self.Buffer {
         precondition(capacity >= 0, "MultiArray capacity must be nonnegative")
     }
 
     @inlinable
-    // @inline(__always)
-    // @_alwaysEmitIntoClient
     public static func rawSize(capacity: Int, from offset: Int) -> Int? {
         guard capacity >= 0, offset >= 0 else { return nil }
         return offset
