@@ -16,6 +16,13 @@ extension MultiArray: Equatable where Element: Equatable {
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.count == rhs.count else { return false }
+        // Identical storage implies equal contents, and this stays sound under
+        // copy-on-write. `context` is a `let` holding the base address of the
+        // allocation the instance owns and deallocates, so two live instances
+        // cannot share one: equal pointers mean the same MultiArrayData, hence
+        // the same elements. When COW splits a copy, `init(from:)` allocates a
+        // fresh block, so the copy gets a different `context` and correctly
+        // falls through to the element-wise comparison below.
         if lhs.arrayData.context == rhs.arrayData.context { return true }
         return lhs.elementsEqual(rhs)
     }

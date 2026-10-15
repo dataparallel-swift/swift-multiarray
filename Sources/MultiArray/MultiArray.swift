@@ -15,9 +15,27 @@
 /// An array where the elements are stored in struct-of-array style. This
 /// can provide better data locality and enable efficient (automatic)
 /// vectorisation.
+///
+/// `MultiArray` has value semantics: copies initially share storage, and an
+/// indexed mutation copies the storage before modifying it when necessary.
+///
+/// `MultiArray` is not `Sendable`. Copy-on-write provides value semantics for
+/// ordinary use, but it is not a synchronization mechanism. Keep an instance
+/// within a single concurrency isolation domain; concurrent mutation, or a
+/// mutation concurrent with a read, is unsupported.
 public struct MultiArray<Element> where Element: Generic, Element.RawRepresentation: ArrayData {
     @usableFromInline
-    internal let arrayData: MultiArrayData<Element.RawRepresentation>
+    internal var arrayData: MultiArrayData<Element.RawRepresentation>
+
+    /// Ensures this value has exclusive ownership of its storage before a
+    /// mutation. Every operation that writes to `arrayData` must call this
+    /// first so copies retain value semantics.
+    @inlinable
+    internal mutating func _prepareForMutation() {
+        if !isKnownUniquelyReferenced(&self.arrayData) {
+            self.arrayData = .init(from: self.arrayData)
+        }
+    }
 
     /// The number of elements in the array.
     @inlinable
@@ -145,6 +163,7 @@ internal final class MultiArrayData<A: ArrayData> {
     @usableFromInline
     let storage: A.Buffer
 
+    /// Allocates uninitialized memory for the given number of elements.
     @inlinable
     init(unsafeUninitializedCapacity count: Int) {
         precondition(count >= 0, "MultiArray capacity must be nonnegative")
@@ -156,6 +175,20 @@ internal final class MultiArrayData<A: ArrayData> {
         self.capacity = count
         self.context = context
         self.storage = A.reserve(capacity: count, from: &context)
+    }
+
+    /// Creates independently mutable storage containing the source elements.
+    @inlinable
+    init(from source: MultiArrayData<A>) {
+        guard let byteCount = A.rawSize(capacity: source.count, from: 0) else {
+            preconditionFailure("MultiArray capacity cannot be represented by its storage layout")
+        }
+        var context = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: multiArrayAllocationAlignment)
+        self.capacity = source.count
+        self.count = source.count
+        self.context = context
+        self.storage = A.reserve(capacity: source.count, from: &context)
+        A.initialize(self.storage, from: source.storage, count: source.count)
     }
 
     @inlinable
