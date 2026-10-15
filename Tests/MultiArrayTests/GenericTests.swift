@@ -24,4 +24,27 @@ struct GenericTests {
         #expect(MemoryLayout<UInt>.size == MemoryLayout<UInt.RawRepresentation>.size)
         #expect(MemoryLayout<UInt>.stride == MemoryLayout<UInt.RawRepresentation>.stride)
     }
+
+    @Test
+    func rawRepresentableEnumRoundtrips() {
+        let values: [Status] = [.off, .on, .unknown, .on, .off]
+        #expect(Array(MultiArray(values)) == values)
+    }
+
+    @Test
+    func platformSizedRawValuesSupportStorageOperations() {
+        let original: MultiArray<Priority> = [.low, .high]
+        var copy = original
+        copy[0] = .high
+        #expect(Array(original) == [.low, .high])
+        #expect(Array(copy) == [.high, .high])
+        #expect(Array(MultiArray(repeating: Priority.low, count: 3)) == [.low, .low, .low])
+        #expect(Array(MultiArray<UnsignedPriority>([.low, .high])) == [.low, .high])
+    }
+
+    @Test
+    func rawRepresentableNewtypeRoundtrips() {
+        let values = [Identifier(rawValue: 0), Identifier(rawValue: 42), Identifier(rawValue: .max)]
+        #expect(Array(MultiArray(values)) == values)
+    }
 }
